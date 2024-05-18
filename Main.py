@@ -6,14 +6,24 @@ data.conn
 
 root = Tk()
 root1 = Tk()
+root1.withdraw()
+
 
 
 
 def login():
 
+    cus=data.conn.cursor()
     Label(root,text=txtUserName.get()).grid(row=3,column=1)
     Label(root,text=txtPW.get()).grid(row=3,column=2)
-    root1.mainloop()
+    try:
+        sql = "select 1 from Account where UserName = ? and [Password]=?"
+        cus.execute(sql,(txtUserName,txtPW))
+        resultlg = cus.fetchall()
+    except:
+        resultlg = ()
+
+    a=len(resultlg)
     
 
 
