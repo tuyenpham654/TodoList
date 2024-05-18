@@ -2,8 +2,7 @@ from tkinter import *
 
 
 def login():
-    pw=txtPW.get()
-    us=txtUserName.get()
+
     Label(root,text=txtUserName.get()).grid(row=3,column=1)
     Label(root,text=txtPW.get()).grid(row=3,column=2)
 
