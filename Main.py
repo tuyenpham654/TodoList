@@ -1,13 +1,23 @@
 from tkinter import *
+import data
+
+data.conn
+
+
+root = Tk()
+root1 = Tk()
+
 
 
 def login():
 
     Label(root,text=txtUserName.get()).grid(row=3,column=1)
     Label(root,text=txtPW.get()).grid(row=3,column=2)
+    root1.mainloop()
+    
 
 
-root = Tk()
+
 
 txtUserName = StringVar()
 
