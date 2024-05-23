@@ -30,11 +30,19 @@ def login():
             root.deiconify()
     
 
+def show():
+    cus=d.conn.cursor()
+    try:
+        sql = "select * from Account"
+        cus.execute(sql)
+        resultlg = cus.fetchall()
+    except:
+        resultlg = ()
+    for x in resultlg:
+        litbox.insert(END,x)
 
-
-
+#login
 txtUserName = StringVar()
-
 txtPW = StringVar()
 root.minsize(height=200, width=300)
 root1.minsize(height=600, width=600)
@@ -42,14 +50,15 @@ root1.minsize(height=600, width=600)
 Label(root, text="Tên đăng nhập").grid(row=0,column=0)
 Entry(root,textvariable=txtUserName).grid(row=0,column=1)
 
-Label(root, text="Tên đăng nhập").grid(row=1,column=0)
-
+Label(root, text="Mật khẩu").grid(row=1,column=0)
 Entry(root,textvariable=txtPW).grid(row=1,column=1)
 
 
 Button(root, text="Đăng Nhập",command=login).grid(row=2,column=0)
 Button(root, text="Thoát",command=root.quit).grid(row=2,column=1)
 
-
-
+#show data trong list
+litbox = Listbox(root1, width=80,height=20)
+litbox.grid(column=0,row=0)
+show()
 root.mainloop()
