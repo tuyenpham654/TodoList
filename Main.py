@@ -10,16 +10,16 @@ root1.title("To Do List")
 
 
 def login():
-
-    cus=d.conn.cursor()
-    
+    global txtUserName_value
+    cus = d.conn.cursor()
+    txtUserName_value = txtUserName.get()
     try:
-        sql = "select 1 from Account where UserName = ? and [Password]=?"
+        sql = "select 1 from users where username = ? and [password]=?"
         cus.execute(sql,(txtUserName.get(),txtPW.get()))
         resultlg = cus.fetchall()
     except:
         resultlg = ()
-
+    
     a=len(resultlg)
     if a == 1:
         if root1.state() == "withdrawn":
@@ -28,19 +28,22 @@ def login():
         else:
             root1.withdraw()
             root.deiconify()
-    
+    show(txtUserName_value)
 
-def show():
+def show(usn):
+    
     cus=d.conn.cursor()
     try:
-        sql = "select * from Account"
-        cus.execute(sql)
+        sql = "select * from view_task where username = ?"
+        cus.execute(sql,(usn,))
         resultlg = cus.fetchall()
     except:
         resultlg = ()
+  
     for x in resultlg:
+        
         litbox.insert(END,x)
-
+    
 #login
 txtUserName = StringVar()
 txtPW = StringVar()
@@ -60,5 +63,6 @@ Button(root, text="Thoát",command=root.quit).grid(row=2,column=1)
 #show data trong list
 litbox = Listbox(root1, width=80,height=20)
 litbox.grid(column=0,row=0)
-show()
+
+
 root.mainloop()

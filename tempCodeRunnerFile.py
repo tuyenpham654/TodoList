@@ -1,8 +1,3 @@
-import pyodbc,data as d
-import tkinter as tk
-
-
-
 
 # # Tạo hai cửa sổ
 # root1 = tk.Tk()
@@ -24,25 +19,3 @@ import tkinter as tk
 # button.pack()
 # # Hiển thị root1
 # root1.mainloop()
-cus = d.conn.cursor()
-
-us = input("Nhập tài khoản: ")
-pw = input("Nhập mật khẩu: ")
-try:
-    sql = "select 1 from users where username = ? and [password]=?"
-    cus.execute(sql,(us,pw))
-    resultlg = cus.fetchall()
-except:
-    resultlg = ()
-
-a=len(resultlg)
-
-
-if len(resultlg) ==1:
-    cus.execute("select * from users")
-    result = cus.fetchall()
-    for x in result:
-        print(x)
-else:
-    print("COOK!")
-
