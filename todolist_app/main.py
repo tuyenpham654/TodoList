@@ -8,9 +8,11 @@ def install_requirements():
 
 if __name__ == "__main__":
     install_requirements()
-    db_manager = DatabaseManager(host="localhost", user="root", password="")
+    db_manager = DatabaseManager(server="localhost", user="sa", password="sa")
     db_manager.create_database()
     db_manager.use_database()
     db_manager.create_tables()
-    app = App()
+    db_manager.add_users_samples()
+    db_manager.add_categories_samples()
+    app = App(db_manager)
     app.run()

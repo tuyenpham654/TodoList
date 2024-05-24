@@ -2,20 +2,30 @@ import tkinter as tk
 from tkcalendar import Calendar
 import datetime
 
+from gui_login import GUILogin
+
 class App:
-    def __init__(self):
+    def __init__(self , db_manager):
+        self.db_manager = db_manager
         self.root = tk.Tk()
         self.root.title("TodoList")
         self.root.geometry("1000x700")
 
+        self.gui_login = None
         self.create_widgets()
 
     def create_widgets(self):
         # Header
         header_frame = tk.Frame(self.root, height=20, bg="lightgrey")
         header_frame.pack(side=tk.TOP, fill=tk.X, anchor="e")
+        
+        # Header label
         header_label = tk.Label(header_frame, text="Hi: ...", font=("Arial", 9), bg="lightgrey")
         header_label.pack(side=tk.LEFT ,pady=10)
+
+        # Đăng nhập/Đăng ký button
+        login_button = tk.Button(header_frame, text="Đăng nhập/Đăng ký", command=self.show_login)
+        login_button.pack(side=tk.RIGHT, padx=10, pady=5)
 
         # Sidebar
         sidebar_frame = tk.Frame(self.root, width=200, bg="white")
@@ -63,6 +73,16 @@ class App:
 
     def run(self):
         self.root.mainloop()
+    
+    def new_todo(self):
+        # Thêm hành động khi nhấn nút "New" trong menu
+        pass
+
+    def show_login(self):
+       if self.gui_login is None:
+        self.gui_login = GUILogin(self.db_manager)
+        self.gui_login.run()
+        pass
 
 if __name__ == "__main__":
     app = App()
