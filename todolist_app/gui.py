@@ -2,14 +2,18 @@ import tkinter as tk
 from tkcalendar import Calendar
 import datetime
 
+from app_logic import AppLogic
+
 from gui_login import GUILogin
 
 class App:
+    
     def __init__(self , db_manager):
         self.db_manager = db_manager
         self.root = tk.Tk()
         self.root.title("TodoList")
         self.root.geometry("1000x700")
+        
 
         self.gui_login = None
         self.create_widgets()
@@ -20,7 +24,7 @@ class App:
         header_frame.pack(side=tk.TOP, fill=tk.X, anchor="e")
         
         # Header label
-        header_label = tk.Label(header_frame, text="Hi: ...", font=("Arial", 9), bg="lightgrey")
+        header_label = tk.Label(header_frame, text=f"Hi: ...", font=("Arial", 9), bg="lightgrey")
         header_label.pack(side=tk.LEFT ,pady=10)
 
         # Đăng nhập/Đăng ký button
@@ -28,17 +32,33 @@ class App:
         login_button.pack(side=tk.RIGHT, padx=10, pady=5)
 
         # Sidebar
-        sidebar_frame = tk.Frame(self.root, width=200, bg="white")
+        sidebar_frame = tk.Frame(self.root, width=200, bg="black")
         sidebar_frame.pack(side=tk.LEFT, fill=tk.Y)
 
         # Vertical separator line for sidebar
         separator_frame = tk.Frame(self.root, width=1, bg="black")
         separator_frame.pack(side=tk.LEFT, fill=tk.Y)
 
-        # Calendar in Sidebar
+        # entry in Sidebar
         today = datetime.date.today()
-        cal = Calendar(sidebar_frame, selectmode="day", year=today.year, month=today.month, day=today.day)
-        cal.pack(pady=20)
+        
+        addnew_freame = tk.Frame(sidebar_frame)
+        addnew_freame.pack(side=tk.LEFT,anchor="n")
+        
+        e1=tk.Entry(addnew_freame,)
+        e1.grid(row=1,column=0)
+        btn1=tk.Button(addnew_freame,text="+",command=self.show_task)
+        btn1.grid(row=1,column=1)
+
+        i = 3
+        app_logic_instance = AppLogic()
+        user = app_logic_instance.list(self.db_manager)
+        for x in user:
+            i+=1
+            sblb= tk.Label(addnew_freame,text=x[0])
+            sblb.grid(row=i,column=1)
+
+
 
         # Content
         content_frame = tk.Frame(self.root, bg="white")
@@ -83,7 +103,12 @@ class App:
         self.gui_login = GUILogin(self.db_manager)
         self.gui_login.run()
         pass
-
+       
+    #thêm task
+    def show_task(self):
+        pass
+        
+        
 if __name__ == "__main__":
     app = App()
     app.run()

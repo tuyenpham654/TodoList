@@ -64,6 +64,7 @@ class GUILogin:
 
         # Gọi phương thức login từ thể hiện của lớp AppLogic
         app_logic_instance.login(self.db_manager, username, password)
+        
 
 
     def show_register(self, event):
