@@ -8,7 +8,7 @@ def install_requirements():
 
 if __name__ == "__main__":
     install_requirements()
-    db_manager = DatabaseManager(server="localhost", user="sa", password="sa")
+    db_manager = DatabaseManager(server="localhost", user="sa", password="123456")
     db_manager.create_database()
     db_manager.use_database()
     db_manager.create_tables()

@@ -15,6 +15,14 @@ class DatabaseManager:
         except pyodbc.Error as e:
             print(f"Lỗi khi kết nối đến cơ sở dữ liệu SQL Server: {e}")
 
+    def commit(self):
+            """Thực hiện commit các thay đổi vào cơ sở dữ liệu."""
+            try:
+                self.conn.commit()
+                print("Các thay đổi đã được lưu vào cơ sở dữ liệu.")
+            except pyodbc.Error as e:
+                print(f"Lỗi khi thực hiện commit: {e}")
+
     def create_database(self):
         try:
             # Tắt autocommit mode
@@ -77,11 +85,9 @@ class DatabaseManager:
                                         category_id INT PRIMARY KEY IDENTITY(1,1),
                                         category_name VARCHAR(255) UNIQUE NOT NULL,
                                         description NVARCHAR(MAX),
-                                        task_id int,
                                         created_at DATE DEFAULT GETDATE(),
                                         deleted_at DATE NULL,
                                         status BIT DEFAULT 1
-                                        FOREIGN KEY (task_id) REFERENCES tasks (task_id)
                                     )''')
 
             

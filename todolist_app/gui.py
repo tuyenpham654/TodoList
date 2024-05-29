@@ -5,10 +5,13 @@ import datetime
 from app_logic import AppLogic
 
 from gui_login import GUILogin
+from gui_category import GUICategory
+
 
 class App:
     
     def __init__(self , db_manager):
+        
         self.db_manager = db_manager
         self.root = tk.Tk()
         self.root.title("TodoList")
@@ -16,17 +19,23 @@ class App:
         
 
         self.gui_login = None
+        self.gui_category= None
         self.create_widgets()
 
     def create_widgets(self):
+        app_logic_instance = AppLogic()
+
         # Header
         header_frame = tk.Frame(self.root, height=20, bg="lightgrey")
         header_frame.pack(side=tk.TOP, fill=tk.X, anchor="e")
         
         # Header label
-        header_label = tk.Label(header_frame, text=f"Hi: ...", font=("Arial", 9), bg="lightgrey")
-        header_label.pack(side=tk.LEFT ,pady=10)
+        # User = app_logic_instance.get_current_user()
 
+        # if User != None:
+        #     header_label = tk.Label(header_frame, text=f"Hi: {User}", font=("Arial", 9), bg="lightgrey")
+        #     header_label.pack(side=tk.LEFT, pady=10)
+            
         # Đăng nhập/Đăng ký button
         login_button = tk.Button(header_frame, text="Đăng nhập/Đăng ký", command=self.show_login)
         login_button.pack(side=tk.RIGHT, padx=10, pady=5)
@@ -42,21 +51,26 @@ class App:
         # entry in Sidebar
         today = datetime.date.today()
         
-        addnew_freame = tk.Frame(sidebar_frame)
-        addnew_freame.pack(side=tk.LEFT,anchor="n")
+        cate_frame = tk.Frame(sidebar_frame)
+        cate_frame.pack(side=tk.LEFT,anchor="n")
         
-        e1=tk.Entry(addnew_freame,)
-        e1.grid(row=1,column=0)
-        btn1=tk.Button(addnew_freame,text="+",command=self.show_task)
-        btn1.grid(row=1,column=1)
+        add_lb= tk.Label(cate_frame,text="Danh Mục",width=30)
+        add_lb.pack(fill="both")
+        add_btn=tk.Button(cate_frame,text="Thêm category",width=30,command=self.show_category)
+        add_btn.pack(fill="both")
 
-        i = 3
-        app_logic_instance = AppLogic()
-        user = app_logic_instance.list(self.db_manager)
-        for x in user:
+        mincate_frame = tk.Frame(cate_frame,background="black")
+        mincate_frame.pack(fill="both")
+        i = 0
+        catelist = app_logic_instance.show_category(self.db_manager)
+        for x in catelist:
             i+=1
-            sblb= tk.Label(addnew_freame,text=x[0])
-            sblb.grid(row=i,column=1)
+            ctlb= tk.Button(mincate_frame,text=x[1],width=30)
+            ctlb.grid(row=i,column=0,pady=5)
+            ctbtn= tk.Button(mincate_frame,text="sửa")
+            ctbtn.grid(row=i,column=1,pady=5)
+            ctbtn1= tk.Button(mincate_frame,text="xóa")
+            ctbtn1.grid(row=i,column=2,pady=5)
 
 
 
@@ -105,8 +119,9 @@ class App:
         pass
        
     #thêm task
-    def show_task(self):
-        pass
+    def show_category(self):
+        self.gui_category = GUICategory(self.db_manager)
+        self.gui_category.run()
         
         
 if __name__ == "__main__":
