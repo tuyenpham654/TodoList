@@ -57,6 +57,8 @@ class GUICategory:
         # Gọi phương thức login từ thể hiện của lớp AppLogic
         app_logic_instance.add_category(self.db_manager, title, descrip)
 
+        #aa
+
         
     def close_window(self):
         self.root.destroy()
