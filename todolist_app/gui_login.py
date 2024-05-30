@@ -1,5 +1,6 @@
 import tkinter as tk
 from app_logic import AppLogic
+from gui import App
 
 class GUILogin:
     def __init__(self, db_manager):
@@ -63,7 +64,12 @@ class GUILogin:
         app_logic_instance = AppLogic()
 
         # Gọi phương thức login từ thể hiện của lớp AppLogic
-        app_logic_instance.login(self.db_manager, username, password)
+        login_success = app_logic_instance.login(self.db_manager, username, password)
+
+        if login_success:
+            self.root.destroy()
+            app = App(self.db_manager)  # Tạo một thể hiện của class App từ gui.py
+            app.run() 
 
 
     def show_register(self, event):

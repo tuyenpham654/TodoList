@@ -1,8 +1,7 @@
 import tkinter as tk
 from tkcalendar import Calendar
+from app_logic import AppLogic
 import datetime
-
-from gui_login import GUILogin
 
 class App:
     def __init__(self , db_manager):
@@ -11,7 +10,10 @@ class App:
         self.root.title("TodoList")
         self.root.geometry("1000x700")
 
+        self.app_logic_instance = AppLogic()
+
         self.gui_login = None
+        self.header_label = None
         self.create_widgets()
 
     def create_widgets(self):
@@ -19,9 +21,9 @@ class App:
         header_frame = tk.Frame(self.root, height=20, bg="lightgrey")
         header_frame.pack(side=tk.TOP, fill=tk.X, anchor="e")
         
-        # Header label
-        header_label = tk.Label(header_frame, text="Hi: ...", font=("Arial", 9), bg="lightgrey")
-        header_label.pack(side=tk.LEFT ,pady=10)
+         # Header label
+        self.header_label = tk.Label(header_frame, text="Hi:", font=("Arial", 9), bg="lightgrey")
+        self.header_label.pack(side=tk.LEFT ,pady=10)
 
         # Đăng nhập/Đăng ký button
         login_button = tk.Button(header_frame, text="Đăng nhập/Đăng ký", command=self.show_login)
@@ -46,30 +48,21 @@ class App:
         content_label = tk.Label(content_frame, text="Todo List", font=("Arial", 14), bg="white")
         content_label.pack(pady=10)
 
-        # Display days of the month
-        days_frame = tk.Frame(content_frame, bg="white")
-        days_frame.pack(pady=20)
+        user_tasks = self.app_logic_instance.get_user_tasks(self.db_manager)
 
-        # Get current month days
-        self.display_month_days(days_frame, today.year, today.month)
+         # Display tasks as square cards
+        for task in user_tasks:
+            task_frame = tk.Frame(content_frame, bg="lightblue", width=150, height=150, padx=10, pady=10)
+            task_frame.pack(side=tk.LEFT, padx=10, pady=10)
 
-    def display_month_days(self, parent, year, month):
-        for widget in parent.winfo_children():
-            widget.destroy()
+            task_title = task[1]  # Assuming the second field is the task title
+            task_description = task[2]  # Assuming the third field is the task description
 
-        days_in_month = self.days_in_month(year, month)
-        first_day_of_month = datetime.date(year, month, 1).weekday()
+            title_label = tk.Label(task_frame, text=task_title, font=("Arial", 12), bg="white")
+            title_label.pack()
 
-        for i in range(first_day_of_month):
-            tk.Label(parent, text=" ", font=("Arial", 12), bg="white", width=5).grid(row=0, column=i)
-
-        for day in range(1, days_in_month + 1):
-            tk.Label(parent, text=str(day), font=("Arial", 12), bg="white", width=5).grid(row=(first_day_of_month + day - 1) // 7, column=(first_day_of_month + day - 1) % 7)
-
-    def days_in_month(self, year, month):
-        next_month = month % 12 + 1
-        next_month_year = year + (month // 12)
-        return (datetime.date(next_month_year, next_month, 1) - datetime.date(year, month, 1)).days
+            description_label = tk.Label(task_frame, text=task_description, font=("Arial", 10), bg="white")
+            description_label.pack()
 
     def run(self):
         self.root.mainloop()
@@ -79,10 +72,16 @@ class App:
         pass
 
     def show_login(self):
-       if self.gui_login is None:
-        self.gui_login = GUILogin(self.db_manager)
-        self.gui_login.run()
+    #    if self.gui_login is None:
+    #     self.gui_login = GUILogin(self.db_manager)
+    #     self.gui_login.run()
         pass
+    
+    def current_user_name(self):
+        user_name = self.app_logic_instance.get_current_user_name()
+        print(user_name)
+        if self.header_label is not None:
+            self.header_label.config(text=f"Hi: {user_name}")
 
 if __name__ == "__main__":
     app = App()
