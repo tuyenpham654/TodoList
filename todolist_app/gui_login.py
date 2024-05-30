@@ -1,5 +1,6 @@
 import tkinter as tk
 from app_logic import AppLogic
+from app_logic import Auth
 from gui import App
 
 class GUILogin:
@@ -16,62 +17,45 @@ class GUILogin:
         main_frame = tk.Frame(self.root)
         main_frame.pack(expand=True, fill="both", pady=50)
 
-         # Tạo tiêu đề
         login_title_label = tk.Label(main_frame, text="Đăng Nhập", font=("Arial", 20))
         login_title_label.pack(pady=10)
 
-
-        # Username label và entry
         username_frame = tk.Frame(main_frame)
         username_frame.pack()
-
         username_label = tk.Label(username_frame, text="Tên đăng nhập:")
-        username_label.grid(row=0, column=0, sticky="w")  # Đặt sticky="w" để label nằm bên trái
+        username_label.grid(row=0, column=0, sticky="w")
         self.username_entry = tk.Entry(username_frame, width=50)
         self.username_entry.grid(row=1, column=0)
 
-        # Password label và entry
         password_frame = tk.Frame(main_frame)
         password_frame.pack()
-
         password_label = tk.Label(password_frame, text="Mật khẩu:")
-        password_label.grid(row=0, column=0, sticky="w")  # Đặt sticky="w" để label nằm bên trái
+        password_label.grid(row=0, column=0, sticky="w")
         self.password_entry = tk.Entry(password_frame, show="*", width=50)
         self.password_entry.grid(row=1, column=0)
 
-        # Button frame
         button_frame = tk.Frame(main_frame)
         button_frame.pack()
-
-        # Nút đăng nhập
         login_button = tk.Button(button_frame, text="Đăng nhập", command=self.login)
         login_button.grid(row=0, column=0, padx=5, pady=10)
-
-        # Nút đóng
         close_button = tk.Button(button_frame, text="Đóng", command=self.close_window)
         close_button.grid(row=0, column=1, padx=5, pady=10)
 
-        # Dòng "Bạn chưa có tài khoản. Đăng ký ngay"
         register_label = tk.Label(main_frame, text="Bạn chưa có tài khoản? Đăng ký ngay", fg="blue", cursor="hand2")
         register_label.pack()
         register_label.bind("<Button-1>", self.show_register)  # Gán sự kiện click cho label đăng ký
 
     def login(self):
-        username = self.username_entry.get()  # Lấy username từ entry
-        password = self.password_entry.get()  # Lấy password từ entry
-
-        # Gọi phương thức login từ đối tượng AppLogic của chính đối tượng hiện tại
-        app_logic_instance = AppLogic()
-
-        # Gọi phương thức login từ thể hiện của lớp AppLogic
-        login_success = app_logic_instance.login(self.db_manager, username, password)
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+        auth = Auth()
+        login_success = auth.login(self.db_manager, username, password)
 
         if login_success:
             self.root.destroy()
-            app = App(self.db_manager)  # Tạo một thể hiện của class App từ gui.py
-            app.run() 
-
-
+            app = App(self.db_manager)
+            app.run()
+            
     def show_register(self, event):
         # Hiển thị GUI đăng ký khi click vào label "Đăng ký"
         register_gui = GUIRegister()

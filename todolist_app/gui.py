@@ -17,32 +17,25 @@ class App:
         self.create_widgets()
 
     def create_widgets(self):
-        # Header
         header_frame = tk.Frame(self.root, height=20, bg="lightgrey")
         header_frame.pack(side=tk.TOP, fill=tk.X, anchor="e")
-        
-         # Header label
-        self.header_label = tk.Label(header_frame, text="Hi:", font=("Arial", 9), bg="lightgrey")
-        self.header_label.pack(side=tk.LEFT ,pady=10)
 
-        # Đăng nhập/Đăng ký button
+        self.header_label = tk.Label(header_frame, text="Hi:", font=("Arial", 9), bg="lightgrey")
+        self.header_label.pack(side=tk.LEFT, pady=10)
+
         login_button = tk.Button(header_frame, text="Đăng nhập/Đăng ký", command=self.show_login)
         login_button.pack(side=tk.RIGHT, padx=10, pady=5)
 
-        # Sidebar
         sidebar_frame = tk.Frame(self.root, width=200, bg="white")
         sidebar_frame.pack(side=tk.LEFT, fill=tk.Y)
 
-        # Vertical separator line for sidebar
         separator_frame = tk.Frame(self.root, width=1, bg="black")
         separator_frame.pack(side=tk.LEFT, fill=tk.Y)
 
-        # Calendar in Sidebar
         today = datetime.date.today()
         cal = Calendar(sidebar_frame, selectmode="day", year=today.year, month=today.month, day=today.day)
         cal.pack(pady=20)
 
-        # Content
         content_frame = tk.Frame(self.root, bg="white")
         content_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         content_label = tk.Label(content_frame, text="Todo List", font=("Arial", 14), bg="white")
@@ -50,7 +43,6 @@ class App:
 
         user_tasks = self.app_logic_instance.get_user_tasks(self.db_manager)
 
-         # Display tasks as square cards
         for task in user_tasks:
             task_frame = tk.Frame(content_frame, bg="lightblue", width=150, height=150, padx=10, pady=10)
             task_frame.pack(side=tk.LEFT, padx=10, pady=10)
@@ -75,13 +67,14 @@ class App:
     #    if self.gui_login is None:
     #     self.gui_login = GUILogin(self.db_manager)
     #     self.gui_login.run()
+
         pass
     
     def current_user_name(self):
-        user_name = self.app_logic_instance.get_current_user_name()
-        print(user_name)
+        user_name = self.app_logic_instance.get_user_name()
         if self.header_label is not None:
             self.header_label.config(text=f"Hi: {user_name}")
+
 
 if __name__ == "__main__":
     app = App()
