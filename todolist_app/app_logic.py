@@ -1,7 +1,7 @@
 import pyodbc
 
 class AppLogic:
-
+    currenuser = None
     def login(self, db_manager, username, password):
         try:
             # Sử dụng cơ sở dữ liệu TodoList
@@ -14,8 +14,8 @@ class AppLogic:
             # Kiểm tra kết quả trả về từ truy vấn
             if user:
                 print("Đăng nhập thành công!")
-                self.current_user = user  # Gán user vào thuộc tính current_user
-                return user
+                self.currenuser = user
+                return self.currenuser
             
             else:
                 print("Tên đăng nhập hoặc mật khẩu không đúng.")

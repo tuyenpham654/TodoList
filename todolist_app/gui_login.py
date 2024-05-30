@@ -7,7 +7,7 @@ class GUILogin:
         self.root = tk.Tk()
         self.root.title("Đăng nhập")
         self.root.geometry("500x300")
-
+        self.current_user=None
         self.create_widgets()
 
     def create_widgets(self):
@@ -63,7 +63,8 @@ class GUILogin:
         app_logic_instance = AppLogic()
 
         # Gọi phương thức login từ thể hiện của lớp AppLogic
-        app_logic_instance.login(self.db_manager, username, password)
+        currenuser=app_logic_instance.login(self.db_manager, username, password)
+        print(currenuser)
 
         
 
