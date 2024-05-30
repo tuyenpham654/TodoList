@@ -36,7 +36,6 @@ class DatabaseManager:
             # Sử dụng cơ sở dữ liệu TodoList
             self.cursor.execute("USE TodoList")
             self.conn.commit()
-            print("Đã chuyển sang sử dụng database 'TodoList'.")
         except pyodbc.Error as e:
             print(f"Lỗi khi sử dụng database: {e}")
 
@@ -54,7 +53,7 @@ class DatabaseManager:
                                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                                         deleted_at DATETIME NULL,
-                                        status BIT DEFAULT 1
+                                        status INT DEFAULT 1,
                                     )''')
 
             # Tạo bảng categories
@@ -66,7 +65,7 @@ class DatabaseManager:
                                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                                         deleted_at DATETIME NULL,
-                                        status BIT DEFAULT 1
+                                        status INT DEFAULT 1,
                                     )''')
 
             # Tạo bảng tasks
@@ -81,7 +80,7 @@ class DatabaseManager:
                                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                                         deleted_at DATETIME NULL,
-                                        status BIT DEFAULT 1,
+                                        status INT DEFAULT 1,
                                         FOREIGN KEY (user_id) REFERENCES users (user_id),
                                         FOREIGN KEY (category_id) REFERENCES categories (category_id)
                                     )''')
