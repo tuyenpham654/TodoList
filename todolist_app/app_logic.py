@@ -69,6 +69,25 @@ class AppLogic:
             print(f"Lỗi khi thực hiện truy vấn: {e}")
             return []
 
+    def get_user_categories(self, db_manager):
+        user = Auth.get_current_user()
+        if user is None:
+            print("Chưa có người dùng nào đăng nhập.")
+            return []
+        try:
+            # Sử dụng cơ sở dữ liệu TodoList
+            db_manager.use_database()
+
+            user_id = user[0]  # Assuming the first field is user_id
+            query = "SELECT * FROM categories WHERE user_id = ? AND deleted_at IS NULL AND status = 1"
+            db_manager.cursor.execute(query, (user_id,))
+            categories = db_manager.cursor.fetchall()
+            
+            return categories
+        except pyodbc.Error as e:
+            print(f"Lỗi khi thực hiện truy vấn: {e}")
+            return []
+
     def add_task(self, db_manager, title, category_id=None, description=None, due_date=None):
         user = Auth.get_current_user()
         if user is None:
@@ -301,4 +320,82 @@ class AppLogic:
             return True, "Đăng ký thành công."
         except Exception as e:
             return False, f"Lỗi: {str(e)}"
+    
+    def add_category(self, db_manager,category_name, description=None):
+        user = Auth.get_current_user()
+        if user is None:
+            print("No user is currently logged in.")
+            return False
+        
+        try:
+            # Sử dụng cơ sở dữ liệu TodoList
+            db_manager.use_database()
 
+            user_id = user[0]  # Assuming the first field is user_id
+            query = """INSERT INTO categories (category_name, description, user_id, updated_at, created_at, status) 
+                    VALUES (?, ?, ?, ?, ?, ?)"""
+            current_datetime = datetime.now()
+            status = 1 
+            db_manager.cursor.execute(query, (category_name, description, user_id, current_datetime, current_datetime, status))
+            db_manager.conn.commit()
+            print("Category added successfully!")
+            return True
+        except pyodbc.Error as e:
+            print(f"Lỗi khi thực hiện truy vấn: {e}")
+            return False
+
+    def get_category_by_id(self, db_manager, category_id):
+        query = "SELECT * FROM categories WHERE category_id = ? AND deleted_at IS NULL AND status = 1"
+        result = db_manager.cursor.execute(query, (category_id,))
+        task = result.fetchone() 
+        print(task)
+        return task
+    
+    def update_category(self, db_manager, category_id, name=None, description=None):
+        user = Auth.get_current_user()
+        if user is None:
+            print("No user is currently logged in.")
+            return False
+
+        try:
+            # Sử dụng cơ sở dữ liệu TodoList
+            db_manager.use_database()
+
+            current_datetime = datetime.now()
+
+            # Tạo câu lệnh SQL UPDATE dựa trên các tham số được cung cấp
+            update_fields = []
+            update_values = []
+
+            if name is not None:
+                update_fields.append("category_name = ?")
+                update_values.append(name)
+
+            if description is not None:
+                update_fields.append("description = ?")
+                update_values.append(description)
+
+
+            # Nếu không có trường nào được cập nhật, thông báo và kết thúc
+            if not update_fields:
+                print("No fields to update.")
+                return False
+
+            # Thêm trường updated_at vào danh sách cập nhật
+            update_fields.append("updated_at = ?")
+            update_values.append(current_datetime)
+
+            # Thêm task_id vào danh sách giá trị cho điều kiện WHERE
+            update_values.append(category_id)
+
+            # Tạo câu lệnh SQL UPDATE hoàn chỉnh
+            update_query = f"""UPDATE categories SET {', '.join(update_fields)} WHERE category_id = ?"""
+
+            # Thực hiện truy vấn UPDATE
+            db_manager.cursor.execute(update_query, tuple(update_values))
+            db_manager.conn.commit()
+            print("Category updated successfully!")
+            return True
+        except pyodbc.Error as e:
+            print(f"Lỗi khi thực hiện truy vấn: {e}")
+            return False

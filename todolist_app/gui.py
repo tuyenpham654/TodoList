@@ -4,6 +4,7 @@ import tkinter as tk
 from tkcalendar import Calendar
 from app_logic import AppLogic
 from gui_task import GUITask
+from gui_category import GUICategory
 from gui_user import GUIUser, ChangePassword
 from app_logic import Auth
 import datetime
@@ -21,6 +22,7 @@ class App:
         self.gui_login = None
         self.gui_task = None
         self.gui_user = None
+        self.gui_category=None
         self.header_label = None
         self.create_widgets()
         self.current_user_name()
@@ -78,19 +80,49 @@ class App:
         category_button.pack(side=tk.RIGHT, padx=10, pady=5)
         category_menu = tk.Menu(category_button, tearoff=False)
         category_button.configure(menu=category_menu)
-        category_menu.add_command(label="Thêm danh mục", compound=tk.LEFT, command=self.show_task_gui)
+        category_menu.add_command(label="Thêm danh mục", compound=tk.LEFT, command=self.show_category_gui)
         category_menu.add_command(label="Làm mới danh mục", compound=tk.LEFT, command=self.refresh_tasks)
 
 
-        sidebar_frame = tk.Frame(self.root, width=200, bg="white")
-        sidebar_frame.pack(side=tk.LEFT, fill=tk.Y)
+        self.sidebar_frame = tk.Frame(self.root, width=200, bg="white")
+        self.sidebar_frame.pack(side=tk.LEFT, fill=tk.Y)
 
         separator_frame = tk.Frame(self.root, width=1, bg="black")
         separator_frame.pack(side=tk.LEFT, fill=tk.Y)
 
         today = datetime.date.today()
-        cal = Calendar(sidebar_frame, selectmode="day", year=today.year, month=today.month, day=today.day)
-        cal.pack(pady=20)
+        # Widgets trong phần Sidebar
+        doing_label = tk.Label(self.sidebar_frame, text="Category", font=("Arial", 14), bg="white")
+        doing_label.pack(padx=10, pady=10, anchor="nw")
+        user_tasks = self.app_logic_instance.get_user_tasks(self.db_manager)
+        for task in user_tasks:
+            task_frame = tk.Frame(self.sidebar_frame, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+            task_frame.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
+
+            task_title = task[3]  # Assuming the second field is the task title
+            task_description = task[4]  # Assuming the third field is the task description
+
+            title_label = tk.Label(task_frame, text=task_title, font=("Arial", 16), width=10)
+            title_label.pack()
+
+            description_label = tk.Label(task_frame, text=task_description, font=("Arial", 12), width=10, height=5)
+            description_label.pack()
+
+            # Tạo một Frame để chứa các button và sử dụng grid để căn giữa và đồng bộ width
+            button_frame = tk.Frame(task_frame)
+            button_frame.pack(side=tk.BOTTOM, padx=5, pady=5, anchor="w")
+
+            complete_button = tk.Button(button_frame, text="Hoàn thành", command=lambda id=task[0]: self.complete_task(task_frame, id), foreground="green", width=10)
+            complete_button.grid(row=0, column=0, padx=5, pady=5)
+
+            update_button = tk.Button(button_frame, text="Cập nhật", command=lambda id=task[0]: self.update_task(task_frame, id), foreground="black", width=10)
+            update_button.grid(row=1, column=0, padx=5, pady=5)
+
+            delete_button = tk.Button(button_frame, text="Xoá", command=lambda id=task[0]: self.delete_task(task_frame, id), foreground="red", width=10)
+            delete_button.grid(row=2, column=0, padx=5, pady=5)
+
+        # cal = Calendar(sidebar_frame, selectmode="day", year=today.year, month=today.month, day=today.day)
+        # cal.pack(pady=20)
 
         self.content_frame = tk.Frame(self.root, bg="white")
         self.content_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -259,6 +291,11 @@ class App:
         if self.gui_task is None:
             self.gui_task = GUITask(self.db_manager)
             self.gui_task.run()
+
+    def show_category_gui(self):
+        if self.gui_category is None:
+            self.gui_category = GUICategory(self.db_manager)
+            self.gui_category.run()
 
     def show_user_gui(self, id):
         if self.gui_user is None:
