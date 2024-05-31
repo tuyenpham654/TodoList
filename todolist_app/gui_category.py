@@ -1,65 +1,129 @@
 import tkinter as tk
+from tkinter import ttk, messagebox
+from tkcalendar import DateEntry
 from app_logic import AppLogic
 
 class GUICategory:
     def __init__(self, db_manager):
         self.db_manager = db_manager
+        self.category_id = None
         self.root = tk.Tk()
-        self.root.title("Thêm Category")
-        self.root.geometry("250x250")
-
+        self.root.title("Thêm Nhiệm Vụ")
+        self.root.geometry("500x500")
+        self.app_logic_instance = AppLogic()
+        # self.categories_dict = {}
+        self.use_due_date = tk.BooleanVar(value=False)  
         self.create_widgets()
 
     def create_widgets(self):
-        # Tạo một frame chứa tất cả các thành phần
         main_frame = tk.Frame(self.root)
         main_frame.pack(expand=True, fill="both", pady=50)
 
+        task_title_label = tk.Label(main_frame, text="Thêm Nhiệm Vụ", font=("Arial", 20))
+        task_title_label.pack(pady=10)
 
-        # title label và entry
         title_frame = tk.Frame(main_frame)
         title_frame.pack()
 
-        title_label = tk.Label(title_frame, text="Tên đăng nhập:")
-        title_label.grid(row=0, column=0, sticky="w")  # Đặt sticky="w" để label nằm bên trái
+        title_label = tk.Label(title_frame, text="Tiêu Đề:")
+        title_label.grid(row=2, column=0, sticky="w")
         self.title_entry = tk.Entry(title_frame, width=50)
-        self.title_entry.grid(row=1, column=0)
+        self.title_entry.grid(row=3, column=0)
 
-        # descrip label và entry
-        descrip_frame = tk.Frame(main_frame)
-        descrip_frame.pack()
+        categories_frame = tk.Frame(main_frame)
+        categories_frame.pack()
 
-        descrip_label = tk.Label(descrip_frame, text="Mật khẩu:")
-        descrip_label.grid(row=0, column=0, sticky="w")  # Đặt sticky="w" để label nằm bên trái
-        self.descrip_entry = tk.Entry(descrip_frame, show="*", width=50)
-        self.descrip_entry.grid(row=1, column=0)
+        description_frame = tk.Frame(main_frame)
+        description_frame.pack()
 
-        # Button frame
+        description_label = tk.Label(description_frame, text="Mô Tả:")
+        description_label.grid(row=6, column=0, sticky="w")
+        self.description_entry = tk.Entry(description_frame, width=50)
+        self.description_entry.grid(row=7, column=0)
+
         button_frame = tk.Frame(main_frame)
         button_frame.pack()
 
-        # Nút đăng nhập
-        add_button = tk.Button(button_frame, text="Thêm", command=self.add_category)
-        add_button.grid(row=0, column=0, padx=5, pady=10)
+        self.add_task_button = tk.Button(button_frame, text="Thêm Nhiệm Vụ", command=self.add_task)
+        self.add_task_button.grid(row=8, column=0, padx=5, pady=10)
 
-        # Nút đóng
         close_button = tk.Button(button_frame, text="Đóng", command=self.close_window)
-        close_button.grid(row=0, column=1, padx=5, pady=10)
+        close_button.grid(row=8, column=1, padx=5, pady=10)
+    
+    def toggle_date_entry(self):
+        if self.use_due_date.get():
+            self.due_date_entry.config(state="normal")
+        else:
+            self.due_date_entry.config(state="disabled")
 
-
-    def add_category(self):
-        title = self.title_entry.get()  # Lấy title từ entry
-        descrip = self.descrip_entry.get()  # Lấy descrip từ entry
-
-        # Gọi phương thức login từ đối tượng AppLogic của chính đối tượng hiện tại
-        app_logic_instance = AppLogic()
-
-        # Gọi phương thức login từ thể hiện của lớp AppLogic
-        app_logic_instance.add_category(self.db_manager, title, descrip)
-
-        #aa
-
+    def add_task(self):
+        title = self.title_entry.get()
+        description = self.description_entry.get()
+        selected_category = self.category_combobox.get()
         
+        # Tìm category_id tương ứng trong từ điển categories_dict
+        category_id = None
+        for key, value in self.categories_dict.items():
+            if value == selected_category:
+                category_id = key
+                break
+        if self.use_due_date.get():
+            due_date = self.due_date_entry.get_date().strftime('%d/%m/%Y')
+        else:
+            due_date = None
+        
+        if self.app_logic_instance.add_task(self.db_manager, title, category_id, description, due_date):
+            messagebox.showinfo("Thành công", "Nhiệm vụ đã được thêm thành công")
+            self.root.destroy()
+        else:
+            messagebox.showerror("Lỗi", "Thêm nhiệm vụ thất bại")
+
+    def set_task_id(self, task_id):
+        self.task_id = task_id
+        self.is_update_mode = True
+        self.add_task_button.config(text="Cập nhật Nhiệm Vụ", command=lambda: self.update_task(self.task_id))
+        task_data = self.app_logic_instance.get_task_by_id(self.db_manager, task_id)
+        if task_data:
+            self.title_entry.delete(0, tk.END)
+            self.title_entry.insert(0, task_data[3])
+
+            self.description_entry.delete(0, tk.END)
+            self.description_entry.insert(0, task_data[4])
+
+            if task_data[6]:  # Kiểm tra nếu due_date không phải là None
+                self.due_date_entry.set_date(task_data[6])
+                self.use_due_date.set(True)
+                self.due_date_entry.config(state="normal")
+            else:
+                self.use_due_date.set(False)
+                self.due_date_entry.config(state="disabled")
+    
+    def update_task(self, task_id):
+        title = self.title_entry.get()
+        description = self.description_entry.get()
+        selected_category = self.category_combobox.get()
+        
+        # Tìm category_id tương ứng trong từ điển categories_dict
+        category_id = None
+        for key, value in self.categories_dict.items():
+            if value == selected_category:
+                category_id = key
+                break
+        if self.use_due_date.get():
+            due_date = self.due_date_entry.get_date().strftime('%d/%m/%Y')
+        else:
+            due_date = None
+        
+        if task_id and self.app_logic_instance.update_task(self.db_manager, task_id, title, category_id, description, due_date):
+            messagebox.showinfo("Thành công", "Nhiệm vụ đã được cập nhật thành công")
+            self.root.destroy()
+        else:
+            messagebox.showerror("Lỗi", "Cập nhật nhiệm vụ thất bại")
+    
+    def destroy_add_task_button(self):
+        if self.task_updated:
+            self.add_task_button.destroy()
+
     def close_window(self):
         self.root.destroy()
 
@@ -70,6 +134,7 @@ class GUICategory:
         y = (self.root.winfo_screenheight() - self.root.winfo_reqheight()) / 2
         self.root.geometry("+%d+%d" % (x, y))
         self.root.mainloop()
+
 
 if __name__ == "__main__":
     cate_gui = GUICategory()

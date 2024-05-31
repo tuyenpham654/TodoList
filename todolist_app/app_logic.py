@@ -301,4 +301,27 @@ class AppLogic:
             return True, "Đăng ký thành công."
         except Exception as e:
             return False, f"Lỗi: {str(e)}"
+    
+    def add_category(self, db_manager,category_name,category_id=None , description=None):
+        user = Auth.get_current_user()
+        if user is None:
+            print("No user is currently logged in.")
+            return False
+        
+        try:
+            # Sử dụng cơ sở dữ liệu TodoList
+            db_manager.use_database()
+
+            user_id = user[0]  # Assuming the first field is user_id
+            query = """INSERT INTO categories (category_id, category_name, description, user_id, updated_at, created_at, status) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)"""
+            current_datetime = datetime.now()
+            status = 1 
+            db_manager.cursor.execute(query, (category_id, category_name, description, user_id, current_datetime, current_datetime, status))
+            db_manager.conn.commit()
+            print("Category added successfully!")
+            return True
+        except pyodbc.Error as e:
+            print(f"Lỗi khi thực hiện truy vấn: {e}")
+            return False
 

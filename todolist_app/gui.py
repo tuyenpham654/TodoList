@@ -4,6 +4,7 @@ import tkinter as tk
 from tkcalendar import Calendar
 from app_logic import AppLogic
 from gui_task import GUITask
+from gui_category import GUICategory
 from gui_user import GUIUser, ChangePassword
 from app_logic import Auth
 import datetime
@@ -21,6 +22,7 @@ class App:
         self.gui_login = None
         self.gui_task = None
         self.gui_user = None
+        self.gui_category=None
         self.header_label = None
         self.create_widgets()
         self.current_user_name()
@@ -78,7 +80,7 @@ class App:
         category_button.pack(side=tk.RIGHT, padx=10, pady=5)
         category_menu = tk.Menu(category_button, tearoff=False)
         category_button.configure(menu=category_menu)
-        category_menu.add_command(label="Thêm danh mục", compound=tk.LEFT, command=self.show_task_gui)
+        category_menu.add_command(label="Thêm danh mục", compound=tk.LEFT, command=self.show_category_gui)
         category_menu.add_command(label="Làm mới danh mục", compound=tk.LEFT, command=self.refresh_tasks)
 
 
@@ -259,6 +261,11 @@ class App:
         if self.gui_task is None:
             self.gui_task = GUITask(self.db_manager)
             self.gui_task.run()
+
+    def show_category_gui(self):
+        if self.gui_category is None:
+            self.gui_category = GUICategory(self.db_manager)
+            self.gui_category.run()
 
     def show_user_gui(self, id):
         if self.gui_user is None:
