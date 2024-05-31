@@ -146,7 +146,7 @@ class GUITask:
             self.add_task_button.destroy()
 
     def close_window(self):
-        self.root.destroy()
+        self.root.quit()
 
     def run(self):
         self.root.update_idletasks()  # Hiển thị cửa sổ trước khi thực hiện các thay đổi
