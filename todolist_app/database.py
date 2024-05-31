@@ -15,21 +15,13 @@ class DatabaseManager:
         except pyodbc.Error as e:
             print(f"Lỗi khi kết nối đến cơ sở dữ liệu SQL Server: {e}")
 
-    def commit(self):
-            """Thực hiện commit các thay đổi vào cơ sở dữ liệu."""
-            try:
-                self.conn.commit()
-                print("Các thay đổi đã được lưu vào cơ sở dữ liệu.")
-            except pyodbc.Error as e:
-                print(f"Lỗi khi thực hiện commit: {e}")
-
     def create_database(self):
         try:
             # Tắt autocommit mode
             self.conn.autocommit = True
             
             # Tạo cơ sở dữ liệu TodoList nếu nó chưa tồn tại
-            self.cursor.execute("IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'TodoList2') CREATE DATABASE TodoList2")
+            self.cursor.execute("IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'TodoList') CREATE DATABASE TodoList")
             
             # Bật lại autocommit mode
             self.conn.autocommit = False
@@ -42,9 +34,8 @@ class DatabaseManager:
     def use_database(self):
         try:
             # Sử dụng cơ sở dữ liệu TodoList
-            self.cursor.execute("USE TodoList2")
+            self.cursor.execute("USE TodoList")
             self.conn.commit()
-            print("Đã chuyển sang sử dụng database 'TodoList'.")
         except pyodbc.Error as e:
             print(f"Lỗi khi sử dụng database: {e}")
 
@@ -59,10 +50,24 @@ class DatabaseManager:
                                         email VARCHAR(255) UNIQUE,
                                         full_name VARCHAR(255),
                                         birthday DATE,
-                                        created_at DATE DEFAULT GETDATE(),
-                                        deleted_at DATE NULL,
-                                        status BIT DEFAULT 1
+                                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                        deleted_at DATETIME NULL,
+                                        status INT DEFAULT 1,
                                     )''')
+
+            # Tạo bảng categories
+            self.cursor.execute('''IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='categories' and xtype='U') 
+                                    CREATE TABLE categories (
+                                        category_id INT PRIMARY KEY IDENTITY(1,1),
+                                        category_name VARCHAR(255) UNIQUE NOT NULL,
+                                        description TEXT,
+                                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                        deleted_at DATETIME NULL,
+                                        status INT DEFAULT 1,
+                                    )''')
+
             # Tạo bảng tasks
             self.cursor.execute('''IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='tasks' and xtype='U') 
                                     CREATE TABLE tasks (
@@ -70,27 +75,16 @@ class DatabaseManager:
                                         user_id INT,
                                         category_id INT,
                                         title VARCHAR(255) NOT NULL,
-                                        description NVARCHAR(MAX),
+                                        description TEXT,
                                         due_date DATE,
-                                        created_at DATE DEFAULT GETDATE(),
-                                        deleted_at DATE NULL,
-                                        status BIT DEFAULT 1,
+                                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                        deleted_at DATETIME NULL,
+                                        status INT DEFAULT 1,
                                         FOREIGN KEY (user_id) REFERENCES users (user_id),
+                                        FOREIGN KEY (category_id) REFERENCES categories (category_id)
                                     )''')
 
-
-            # Tạo bảng categories
-            self.cursor.execute('''IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='categories' and xtype='U') 
-                                    CREATE TABLE categories (
-                                        category_id INT PRIMARY KEY IDENTITY(1,1),
-                                        category_name VARCHAR(255) UNIQUE NOT NULL,
-                                        description NVARCHAR(MAX),
-                                        created_at DATE DEFAULT GETDATE(),
-                                        deleted_at DATE NULL,
-                                        status BIT DEFAULT 1
-                                    )''')
-
-            
             self.conn.commit()
             print("Tạo các bảng thành công!")
         except pyodbc.Error as e:
