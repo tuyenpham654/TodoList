@@ -19,16 +19,16 @@ class GUICategory:
         main_frame = tk.Frame(self.root)
         main_frame.pack(expand=True, fill="both", pady=50)
 
-        task_title_label = tk.Label(main_frame, text="Thêm Nhiệm Vụ", font=("Arial", 20))
+        task_title_label = tk.Label(main_frame, text="Thêm Category", font=("Arial", 20))
         task_title_label.pack(pady=10)
 
-        title_frame = tk.Frame(main_frame)
-        title_frame.pack()
+        name_frame = tk.Frame(main_frame)
+        name_frame.pack()
 
-        title_label = tk.Label(title_frame, text="Tiêu Đề:")
-        title_label.grid(row=2, column=0, sticky="w")
-        self.title_entry = tk.Entry(title_frame, width=50)
-        self.title_entry.grid(row=3, column=0)
+        name_label = tk.Label(name_frame, text="Tên Loại:")
+        name_label.grid(row=2, column=0, sticky="w")
+        self.name_entry = tk.Entry(name_frame, width=50)
+        self.name_entry.grid(row=3, column=0)
 
         categories_frame = tk.Frame(main_frame)
         categories_frame.pack()
@@ -36,7 +36,7 @@ class GUICategory:
         description_frame = tk.Frame(main_frame)
         description_frame.pack()
 
-        description_label = tk.Label(description_frame, text="Mô Tả:")
+        description_label = tk.Label(description_frame, text="Mô tả:")
         description_label.grid(row=6, column=0, sticky="w")
         self.description_entry = tk.Entry(description_frame, width=50)
         self.description_entry.grid(row=7, column=0)
@@ -44,8 +44,8 @@ class GUICategory:
         button_frame = tk.Frame(main_frame)
         button_frame.pack()
 
-        self.add_task_button = tk.Button(button_frame, text="Thêm Nhiệm Vụ", command=self.add_task)
-        self.add_task_button.grid(row=8, column=0, padx=5, pady=10)
+        self.add_category_button = tk.Button(button_frame, text="Thêm Loại", command=self.add_category)
+        self.add_category_button.grid(row=8, column=0, padx=5, pady=10)
 
         close_button = tk.Button(button_frame, text="Đóng", command=self.close_window)
         close_button.grid(row=8, column=1, padx=5, pady=10)
@@ -56,73 +56,44 @@ class GUICategory:
         else:
             self.due_date_entry.config(state="disabled")
 
-    def add_task(self):
-        title = self.title_entry.get()
+    def add_category(self):
+        name = self.name_entry.get()
         description = self.description_entry.get()
-        selected_category = self.category_combobox.get()
-        
-        # Tìm category_id tương ứng trong từ điển categories_dict
-        category_id = None
-        for key, value in self.categories_dict.items():
-            if value == selected_category:
-                category_id = key
-                break
-        if self.use_due_date.get():
-            due_date = self.due_date_entry.get_date().strftime('%d/%m/%Y')
-        else:
-            due_date = None
-        
-        if self.app_logic_instance.add_task(self.db_manager, title, category_id, description, due_date):
+
+        if self.app_logic_instance.add_category(self.db_manager, name, description):
             messagebox.showinfo("Thành công", "Nhiệm vụ đã được thêm thành công")
             self.root.destroy()
         else:
             messagebox.showerror("Lỗi", "Thêm nhiệm vụ thất bại")
 
-    def set_task_id(self, task_id):
-        self.task_id = task_id
+    def set_category_id(self, category_id):
+        self.category_id = category_id
         self.is_update_mode = True
-        self.add_task_button.config(text="Cập nhật Nhiệm Vụ", command=lambda: self.update_task(self.task_id))
-        task_data = self.app_logic_instance.get_task_by_id(self.db_manager, task_id)
-        if task_data:
-            self.title_entry.delete(0, tk.END)
-            self.title_entry.insert(0, task_data[3])
+        self.add_category_button.config(text="Cập nhật Nhiệm Vụ", command=lambda: self.update_category(self.category_id))
+        category_data = self.app_logic_instance.get_category_by_id(self.db_manager, category_id)
+        if category_data:
+            self.name_entry.delete(0, tk.END)
+            self.name_entry.insert(0, category_data[1])
 
             self.description_entry.delete(0, tk.END)
-            self.description_entry.insert(0, task_data[4])
+            self.description_entry.insert(0, category_data[2])
 
-            if task_data[6]:  # Kiểm tra nếu due_date không phải là None
-                self.due_date_entry.set_date(task_data[6])
-                self.use_due_date.set(True)
-                self.due_date_entry.config(state="normal")
-            else:
-                self.use_due_date.set(False)
-                self.due_date_entry.config(state="disabled")
     
-    def update_task(self, task_id):
-        title = self.title_entry.get()
+    def update_category(self, category_id):
+        name = self.name_entry.get()
         description = self.description_entry.get()
-        selected_category = self.category_combobox.get()
         
         # Tìm category_id tương ứng trong từ điển categories_dict
-        category_id = None
-        for key, value in self.categories_dict.items():
-            if value == selected_category:
-                category_id = key
-                break
-        if self.use_due_date.get():
-            due_date = self.due_date_entry.get_date().strftime('%d/%m/%Y')
-        else:
-            due_date = None
         
-        if task_id and self.app_logic_instance.update_task(self.db_manager, task_id, title, category_id, description, due_date):
+        if category_id and self.app_logic_instance.update_category(self.db_manager, category_id, name, description):
             messagebox.showinfo("Thành công", "Nhiệm vụ đã được cập nhật thành công")
             self.root.destroy()
         else:
             messagebox.showerror("Lỗi", "Cập nhật nhiệm vụ thất bại")
     
-    def destroy_add_task_button(self):
-        if self.task_updated:
-            self.add_task_button.destroy()
+    def destroy_add_category_button(self):
+        if self.category_updated:
+            self.add_category_button.destroy()
 
     def close_window(self):
         self.root.destroy()
