@@ -2,7 +2,7 @@ import pyodbc
 from datetime import datetime
 class Auth:
     current_user = None
-    
+    curret_category=None
     def __init__(self):
         pass
 
@@ -23,11 +23,16 @@ class Auth:
         except pyodbc.Error as e:
             print(f"Lỗi khi thực hiện truy vấn: {e}")
             return False
-        
+    def category(self,category_id):
+        Auth.currnet_category=category_id
+        pass
     @classmethod
     def get_current_user(cls):
         # print(self.current_user)
         return cls.current_user
+    def get_current_category(cls):
+        print(cls.curret_category)
+        return cls.curret_category
 
 class AppLogic:
 
@@ -49,7 +54,7 @@ class AppLogic:
         except pyodbc.Error as e:
             print(f"Lỗi khi thực hiện truy vấn: {e}")
             return []
-        
+    
     def get_user_tasks_other(self, db_manager):
         user = Auth.get_current_user()
         if user is None:
@@ -135,6 +140,29 @@ class AppLogic:
             print(f"Lỗi khi thực hiện truy vấn: {e}")
             return False
         
+    def destroy_category(self, db_manager, category_id):
+        user = Auth.get_current_user()
+        if user is None:
+            print("No user is currently logged in.")
+            return False  
+        try:
+            # Sử dụng cơ sở dữ liệu TodoList
+            db_manager.use_database()
+
+            user_id = user[0]  # Assuming the first field is user_id
+            query = """UPDATE category 
+                    SET deleted_at = ?,
+                    status = ?  
+                    WHERE category_id = ? AND user_id = ?"""
+            current_datetime = datetime.now()
+            status = 0
+            db_manager.cursor.execute(query, (current_datetime, status, category_id, user_id))
+            db_manager.conn.commit()
+            print("Category destroyed successfully!")
+            return True
+        except pyodbc.Error as e:
+            print(f"Lỗi khi thực hiện truy vấn: {e}")
+            return False
     def get_task_by_id(self, db_manager, task_id):
         query = "SELECT * FROM tasks WHERE task_id = ? AND deleted_at IS NULL AND status = 1"
         result = db_manager.cursor.execute(query, (task_id,))
@@ -228,13 +256,18 @@ class AppLogic:
             return False
 
     def list_categories(self, db_manager):
+        user = Auth.get_current_user()
+        if user is None:
+            print("Chưa có người dùng nào đăng nhập.")
+            return []
         try:
             # Sử dụng cơ sở dữ liệu TodoList
             db_manager.use_database()
 
+            user_id = user[0]
             # Thực hiện truy vấn kiểm tra người dùng
-            query = f"SELECT * FROM categories"
-            db_manager.cursor.execute(query)
+            query = f"SELECT * FROM categories where user_id = ? AND deleted_at IS NULL AND status = 1"
+            db_manager.cursor.execute(query,(user_id,))
             categoris = db_manager.cursor.fetchall()  
             if categoris:
                 return categoris
@@ -399,3 +432,47 @@ class AppLogic:
         except pyodbc.Error as e:
             print(f"Lỗi khi thực hiện truy vấn: {e}")
             return False
+        
+    def get_task_by_category(self, db_manager,category_id):
+        user = Auth.get_current_user()
+        if user is None:
+            print("Chưa có người dùng nào đăng nhập.")
+            return []
+        try:
+            # Sử dụng cơ sở dữ liệu TodoList
+            db_manager.use_database()
+
+            user_id = user[0]  # Assuming the first field is user_id
+            query = "SELECT * FROM tasks WHERE user_id = ? AND category_id = ? AND deleted_at IS NULL AND status = 1"
+            db_manager.cursor.execute(query, (user_id,category_id))
+            tasks = db_manager.cursor.fetchall()
+            
+            return tasks
+        except pyodbc.Error as e:
+            print(f"Lỗi khi thực hiện truy vấn: {e}")
+            return []
+    
+    def get_task_by_category_other(self, db_manager,category_id):
+        user = Auth.get_current_user()
+        if user is None:
+            print("Chưa có người dùng nào đăng nhập.")
+            return []
+        try:
+            # Sử dụng cơ sở dữ liệu TodoList
+            db_manager.use_database()
+
+            user_id = user[0]  # Assuming the first field is user_id
+            query = "SELECT * FROM tasks WHERE user_id = ? AND category_id = ? AND status != 1"
+            db_manager.cursor.execute(query, (user_id,category_id))
+            tasks = db_manager.cursor.fetchall()
+            
+            return tasks
+        except pyodbc.Error as e:
+            print(f"Lỗi khi thực hiện truy vấn: {e}")
+            return []
+
+
+
+
+
+

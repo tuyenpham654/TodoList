@@ -52,6 +52,16 @@ class App:
                 # Hiển thị thông báo khi xảy ra lỗi trong quá trình xóa nhiệm vụ
                 messagebox.showerror("Lỗi", "Đã xảy ra lỗi khi xóa nhiệm vụ.")
 
+    def delete_category(self, parent, id):
+        confirm = messagebox.askokcancel("Xác nhận", "Bạn có chắc chắn muốn xoá nhiệm vụ này?")
+        if confirm:
+            if self.app_logic_instance.destroy_category(self.db_manager, id):
+                # Hiển thị thông báo khi nhiệm vụ được xóa thành công
+                messagebox.showinfo("Thông báo", "Nhiệm vụ đã được xóa thành công.")
+            else:
+                # Hiển thị thông báo khi xảy ra lỗi trong quá trình xóa nhiệm vụ
+                messagebox.showerror("Lỗi", "Đã xảy ra lỗi khi xóa nhiệm vụ.")
+
     def create_widgets(self):
         header_frame = tk.Frame(self.root, height=20, bg="lightgrey")
         header_frame.pack(side=tk.TOP, fill=tk.X, anchor="e")
@@ -98,30 +108,24 @@ class App:
         i=1
         for cate in user_category:
             i+=1
-            task_frame = tk.Frame(self.sidebar_frame, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
-            task_frame.grid(row=i, column=0, padx=5, pady=5, sticky="nw") 
+            task_frame = tk.Frame(self.sidebar_frame, width=300, height=150, padx=5, pady=5, borderwidth=1, relief="solid")
+            task_frame.grid(row=i, column=0, padx=10, pady=5, sticky="nw") 
 
             category_name = cate[1]  # Assuming the second field is the category name
             category_description = cate[2]  # Assuming the third field is the task description
 
-            title_label = tk.Button(task_frame, text=category_name, font=("Arial", 16), width=10)
-            title_label.grid()
+            title_label = tk.Button(task_frame, text=category_name, font=("Arial", 12), width=10,command= lambda id=cate[0]:self.refresh_task_categories(id))
+            title_label.grid(row=i,column=0)
 
-            # description_label = tk.Button(task_frame, text=category_description, font=("Arial", 12), width=10, height=5)
-            # description_label.grid()
 
-            # Tạo một Frame để chứa các button và sử dụng grid để căn giữa và đồng bộ width
-            # button_frame = tk.Frame(task_frame)
-            # button_frame.pack(side=tk.BOTTOM, padx=5, pady=5, anchor="w")
 
-            # complete_button = tk.Button(button_frame, text="Hoàn thành", command=lambda id=task[0]: self.complete_task(task_frame, id), foreground="green", width=10)
-            # complete_button.grid(row=0, column=0, padx=5, pady=5)
+            option_button = tk.Menubutton(task_frame, text="...", relief="raised")
+            option_button.grid(row=i,column=1)
 
-            # update_button = tk.Button(button_frame, text="Cập nhật", command=lambda id=task[0]: self.update_task(task_frame, id), foreground="black", width=10)
-            # update_button.grid(row=1, column=0, padx=5, pady=5)
-
-            # delete_button = tk.Button(button_frame, text="Xoá", command=lambda id=task[0]: self.delete_task(task_frame, id), foreground="red", width=10)
-            # delete_button.grid(row=2, column=0, padx=5, pady=5)
+            option_menu = tk.Menu(option_button, tearoff=False)
+            option_button.configure(menu=option_menu)
+            option_menu.add_command(label="Sửa", compound=tk.LEFT, command=lambda id=cate[0]: self.show_change_pass_gui(id))
+            option_menu.add_command(label="Xóa", compound=tk.LEFT, command=lambda id=cate[0]: self.delete_category(id))
 
         # cal = Calendar(sidebar_frame, selectmode="day", year=today.year, month=today.month, day=today.day)
         # cal.pack(pady=20)
@@ -210,8 +214,23 @@ class App:
         for widget in self.content_frame_bottom.winfo_children():
             widget.destroy()
 
+        for widget in self.sidebar_frame.winfo_children():
+            widget.destroy()
+
         self.show_current_tasks()
         self.show_other_tasks()
+        self.show_categories()
+    
+    def refresh_task_categories(self,cate_id):
+    # Xóa nhiệm vụ hiện có trên giao diện
+        for widget in self.content_frame_top.winfo_children():
+            widget.destroy()
+
+        for widget in self.content_frame_bottom.winfo_children():
+            widget.destroy()
+
+        self.show_curent_tasks_by_category(cate_id)
+        
 
     def show_current_tasks(self):
         doing_label = tk.Label(self.content_frame_top, text="Đang làm", font=("Arial", 14), bg="white")
@@ -247,6 +266,81 @@ class App:
         completed_label = tk.Label(self.content_frame_bottom, text="Khác", font=("Arial", 14), bg="white")
         completed_label.pack(padx=10, pady=10, anchor="nw")
         user_tasks = self.app_logic_instance.get_user_tasks_other(self.db_manager)
+        for task in user_tasks:
+            task_frame = tk.Frame(self.content_frame_bottom, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+            task_frame.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
+            task_title = task[3] 
+            task_description = task[4]
+            task_status = task[9]
+
+            title_label = tk.Label(task_frame, text=task_title, font=("Arial", 16), width=10)
+            title_label.pack()
+
+            description_label = tk.Label(task_frame, text=task_description, font=("Arial", 12), width=10, height=5)
+            description_label.pack()
+
+            status_text = ""
+            status_color = ""
+            if task_status == 2:
+                status_text = "Hoàn thành"
+                status_color = "green"
+            elif task_status == 0:
+                status_text = "Đã hủy"
+                status_color = "red"
+
+            status_label = tk.Label(task_frame, text=status_text, font=("Arial", 12), foreground=status_color)
+            status_label.pack()
+    
+    def show_categories(self):
+        category_label = tk.Label(self.sidebar_frame, text="Category", font=("Arial", 14), bg="white")
+        category_label.grid(padx=10, pady=10, sticky="nw")
+        user_category = self.app_logic_instance.get_user_categories(self.db_manager)
+        i=1
+        for cate in user_category:
+            i+=1
+            task_frame = tk.Frame(self.sidebar_frame, width=300, height=150, padx=5, pady=5, borderwidth=1, relief="solid")
+            task_frame.grid(row=i, column=0, padx=10, pady=5, sticky="nw") 
+
+            category_name = cate[1]  # Assuming the second field is the category name
+
+            title_label = tk.Button(task_frame, text=category_name, font=("Arial", 12), width=10)
+            title_label.grid()
+
+    def show_curent_tasks_by_category(self,category_id):
+        self.show_other_tasks_by_category(category_id)
+        doing_label = tk.Label(self.content_frame_top, text="Đang làm", font=("Arial", 14), bg="white")
+        doing_label.pack(padx=10, pady=10, anchor="nw")
+        user_tasks = self.app_logic_instance.get_task_by_category(self.db_manager,category_id)
+        for task in user_tasks:
+            task_frame = tk.Frame(self.content_frame_top, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+            task_frame.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
+
+            task_title = task[3]  # Assuming the second field is the task title
+            task_description = task[4]  # Assuming the third field is the task description
+
+            title_label = tk.Label(task_frame, text=task_title, font=("Arial", 16), width=10)
+            title_label.pack()
+
+            description_label = tk.Label(task_frame, text=task_description, font=("Arial", 12), width=10, height=5)
+            description_label.pack()
+
+             # Tạo một Frame để chứa các button và sử dụng grid để căn giữa và đồng bộ width
+            button_frame = tk.Frame(task_frame)
+            button_frame.pack(side=tk.BOTTOM, padx=5, pady=5, anchor="w")
+
+            complete_button = tk.Button(button_frame, text="Hoàn thành", command=lambda id=task[0]: self.complete_task(task_frame, id), foreground="green", width=10)
+            complete_button.grid(row=0, column=0, padx=5, pady=5)
+
+            update_button = tk.Button(button_frame, text="Cập nhật", command=lambda id=task[0]: self.update_task(task_frame, id), foreground="black", width=10)
+            update_button.grid(row=1, column=0, padx=5, pady=5)
+
+            delete_button = tk.Button(button_frame, text="Xoá", command=lambda id=task[0]: self.delete_task(task_frame, id), foreground="red", width=10)
+            delete_button.grid(row=2, column=0, padx=5, pady=5)
+
+    def show_other_tasks_by_category(self,category_id):
+        completed_label = tk.Label(self.content_frame_bottom, text="Khác", font=("Arial", 14), bg="white")
+        completed_label.pack(padx=10, pady=10, anchor="nw")
+        user_tasks = self.app_logic_instance.get_task_by_category_other(self.db_manager,category_id)
         for task in user_tasks:
             task_frame = tk.Frame(self.content_frame_bottom, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
             task_frame.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
