@@ -92,34 +92,36 @@ class App:
 
         today = datetime.date.today()
         # Widgets trong phần Sidebar
-        doing_label = tk.Label(self.sidebar_frame, text="Category", font=("Arial", 14), bg="white")
-        doing_label.pack(padx=10, pady=10, anchor="nw")
-        user_tasks = self.app_logic_instance.get_user_tasks(self.db_manager)
-        for task in user_tasks:
+        category_label = tk.Label(self.sidebar_frame, text="Category", font=("Arial", 14), bg="white")
+        category_label.grid(padx=10, pady=10, sticky="nw")
+        user_category = self.app_logic_instance.get_user_categories(self.db_manager)
+        i=1
+        for cate in user_category:
+            i+=1
             task_frame = tk.Frame(self.sidebar_frame, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
-            task_frame.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
+            task_frame.grid(row=i, column=0, padx=5, pady=5, sticky="nw") 
 
-            task_title = task[3]  # Assuming the second field is the task title
-            task_description = task[4]  # Assuming the third field is the task description
+            category_name = cate[1]  # Assuming the second field is the category name
+            category_description = cate[2]  # Assuming the third field is the task description
 
-            title_label = tk.Label(task_frame, text=task_title, font=("Arial", 16), width=10)
-            title_label.pack()
+            title_label = tk.Button(task_frame, text=category_name, font=("Arial", 16), width=10)
+            title_label.grid()
 
-            description_label = tk.Label(task_frame, text=task_description, font=("Arial", 12), width=10, height=5)
-            description_label.pack()
+            # description_label = tk.Button(task_frame, text=category_description, font=("Arial", 12), width=10, height=5)
+            # description_label.grid()
 
             # Tạo một Frame để chứa các button và sử dụng grid để căn giữa và đồng bộ width
-            button_frame = tk.Frame(task_frame)
-            button_frame.pack(side=tk.BOTTOM, padx=5, pady=5, anchor="w")
+            # button_frame = tk.Frame(task_frame)
+            # button_frame.pack(side=tk.BOTTOM, padx=5, pady=5, anchor="w")
 
-            complete_button = tk.Button(button_frame, text="Hoàn thành", command=lambda id=task[0]: self.complete_task(task_frame, id), foreground="green", width=10)
-            complete_button.grid(row=0, column=0, padx=5, pady=5)
+            # complete_button = tk.Button(button_frame, text="Hoàn thành", command=lambda id=task[0]: self.complete_task(task_frame, id), foreground="green", width=10)
+            # complete_button.grid(row=0, column=0, padx=5, pady=5)
 
-            update_button = tk.Button(button_frame, text="Cập nhật", command=lambda id=task[0]: self.update_task(task_frame, id), foreground="black", width=10)
-            update_button.grid(row=1, column=0, padx=5, pady=5)
+            # update_button = tk.Button(button_frame, text="Cập nhật", command=lambda id=task[0]: self.update_task(task_frame, id), foreground="black", width=10)
+            # update_button.grid(row=1, column=0, padx=5, pady=5)
 
-            delete_button = tk.Button(button_frame, text="Xoá", command=lambda id=task[0]: self.delete_task(task_frame, id), foreground="red", width=10)
-            delete_button.grid(row=2, column=0, padx=5, pady=5)
+            # delete_button = tk.Button(button_frame, text="Xoá", command=lambda id=task[0]: self.delete_task(task_frame, id), foreground="red", width=10)
+            # delete_button.grid(row=2, column=0, padx=5, pady=5)
 
         # cal = Calendar(sidebar_frame, selectmode="day", year=today.year, month=today.month, day=today.day)
         # cal.pack(pady=20)

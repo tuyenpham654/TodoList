@@ -25,7 +25,7 @@ from database import DatabaseManager
 from gui_login import GUILogin
 
 if __name__ == "__main__":
-    db_manager = DatabaseManager(server="localhost", user="sa", password="123456")
+    db_manager = DatabaseManager(server="localhost", user="sa", password="123")
     db_manager.create_database()
     db_manager.use_database()
     db_manager.create_tables()
