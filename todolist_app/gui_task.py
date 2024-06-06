@@ -4,7 +4,7 @@ from tkcalendar import DateEntry
 from app_logic import AppLogic
 
 class GUITask:
-    def __init__(self, db_manager):
+    def __init__(self, db_manager,on_close_callback):
         self.db_manager = db_manager
         self.task_id = None
         self.root = tk.Tk()
@@ -14,7 +14,9 @@ class GUITask:
         self.categories_dict = {}
         self.use_due_date = tk.BooleanVar(value=False)  
         self.create_widgets()
-
+        self.on_close_callback = on_close_callback
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
+        
     def create_widgets(self):
         main_frame = tk.Frame(self.root)
         main_frame.pack(expand=True, fill="both", pady=50)
@@ -146,15 +148,23 @@ class GUITask:
             self.add_task_button.destroy()
 
     def close_window(self):
-        self.root.destroy()
+        if messagebox.askokcancel("Xác nhận", "Bạn có muốn đóng cửa sổ này?"):
+            self.root.destroy()
+            if self.on_close_callback:
+                self.on_close_callback()
 
+    def on_close(self):
+        if messagebox.askokcancel("Xác nhận", "Bạn có muốn đóng cửa sổ này?"):
+            self.root.destroy()
+            if self.on_close_callback:
+                self.on_close_callback()
     def run(self):
         self.root.update_idletasks()  # Hiển thị cửa sổ trước khi thực hiện các thay đổi
         # Hiển thị cửa sổ đăng nhập giữa màn hình
         x = (self.root.winfo_screenwidth() - self.root.winfo_reqwidth()) / 2
         y = (self.root.winfo_screenheight() - self.root.winfo_reqheight()) / 2
         self.root.geometry("+%d+%d" % (x, y))
-        self.root.mainloop()
+        # self.root.mainloop()
 
 if __name__ == "__main__":
     # Khởi tạo db_manager phù hợp của bạn ở đây

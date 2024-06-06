@@ -37,16 +37,15 @@ class App:
 
     def update_task(self, parent, id):
         if self.gui_task is None:
-            self.gui_task = GUITask(self.db_manager)
+            self.gui_task = GUITask(self.db_manager,self.on_gui_close)
             self.gui_task.set_task_id(id)
             self.gui_task.run()
     
     def update_category(self, id):
         if self.gui_category is None:
-            self.gui_category = GUICategory(self.db_manager)
+            self.gui_category = GUICategory(self.db_manager,self.on_gui_close)
             self.gui_category.set_category_id(id)
             self.gui_category.run()
-
 
     def delete_task(self, parent, id):
         confirm = messagebox.askokcancel("Xác nhận", "Bạn có chắc chắn muốn xoá nhiệm vụ này?")
@@ -237,7 +236,6 @@ class App:
 
         self.show_curent_tasks_by_category(cate_id)
         
-
     def show_current_tasks(self):
         doing_label = tk.Label(self.content_frame_top, text="Đang làm", font=("Arial", 14), bg="white")
         doing_label.pack(padx=10, pady=10, anchor="nw")
@@ -383,6 +381,11 @@ class App:
             status_label = tk.Label(task_frame, text=status_text, font=("Arial", 12), foreground=status_color)
             status_label.pack()
 
+    def on_gui_close(self):
+        self.gui_category=None
+        self.gui_task=None
+        self.gui_user=None
+
     def run(self):
         self.root.mainloop()
 
@@ -402,23 +405,23 @@ class App:
 
     def show_task_gui(self):
         if self.gui_task is None:
-            self.gui_task = GUITask(self.db_manager)
+            self.gui_task = GUITask(self.db_manager,self.on_gui_close)
             self.gui_task.run()
 
     def show_category_gui(self):
         if self.gui_category is None:
-            self.gui_category = GUICategory(self.db_manager)
+            self.gui_category = GUICategory(self.db_manager,self.on_gui_close)
             self.gui_category.run()
 
     def show_user_gui(self, id):
         if self.gui_user is None:
-            self.gui_user = GUIUser(self.db_manager)
+            self.gui_user = GUIUser(self.db_manager,self.on_gui_close)
             self.gui_user.set_user_id(id)
             self.gui_user.run()
 
     def show_change_pass_gui(self, id):
         if self.gui_user is None:
-            self.gui_change_pass = ChangePassword(self.db_manager)
+            self.gui_change_pass = ChangePassword(self.db_manager,self.on_gui_close)
             self.gui_change_pass.set_user_id(id)
             self.gui_change_pass.run()
 

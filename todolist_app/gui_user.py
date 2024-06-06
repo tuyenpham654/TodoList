@@ -4,15 +4,21 @@ from tkcalendar import DateEntry
 from app_logic import AppLogic
 
 class GUIUser:
-    def __init__(self, db_manager):
+    def __init__(self, db_manager, on_close_callback):
         self.db_manager = db_manager
+        self.on_close_callback = on_close_callback
+        
         self.user_id = None
+        
         self.root = tk.Tk()
         self.root.title("Cập Nhật Thông Tin")
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.root.geometry("500x500")
         self.app_logic_instance = AppLogic()
         self.user_updated = False
         self.create_widgets()
+        
+        
 
     def create_widgets(self):
         main_frame = tk.Frame(self.root)
@@ -84,7 +90,16 @@ class GUIUser:
             messagebox.showerror("Lỗi", "Cập nhật thông tin người dùng thất bại.")
 
     def close_window(self):
-        self.root.destroy()
+        if messagebox.askokcancel("Xác nhận", "Bạn có muốn đóng cửa sổ này?"):
+            self.root.destroy()
+            if self.on_close_callback:
+                self.on_close_callback()
+
+    def on_close(self):
+        if messagebox.askokcancel("Xác nhận", "Bạn có muốn đóng cửa sổ này?"):
+            self.root.destroy()
+            if self.on_close_callback:
+                self.on_close_callback()
 
     def run(self):
         self.root.update_idletasks()  
@@ -94,11 +109,14 @@ class GUIUser:
         self.root.mainloop()
         
 class ChangePassword:
-    def __init__(self, db_manager):
+    def __init__(self, db_manager, on_close_callback):
         self.db_manager = db_manager
         self.user_id = None
+        self.on_close_callback = on_close_callback
+        
         self.root = tk.Tk()
         self.root.title("Thay Đổi Mật Khẩu")
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.root.geometry("500x400")
         self.app_logic_instance = AppLogic()
         self.create_widgets()
@@ -163,7 +181,16 @@ class ChangePassword:
             messagebox.showerror("Lỗi", "Thay đổi mật khẩu thất bại.")
 
     def close_window(self):
-        self.root.destroy()
+        if messagebox.askokcancel("Xác nhận", "Bạn có muốn đóng cửa sổ này?"):
+            self.root.destroy()
+            if self.on_close_callback:
+                self.on_close_callback()
+
+    def on_close(self):
+        if messagebox.askokcancel("Xác nhận", "Bạn có muốn đóng cửa sổ này?"):
+            self.root.destroy()
+            if self.on_close_callback:
+                self.on_close_callback()
 
     def run(self):
         self.root.update_idletasks()  

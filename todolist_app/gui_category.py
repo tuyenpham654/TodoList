@@ -4,14 +4,16 @@ from tkcalendar import DateEntry
 from app_logic import AppLogic
 
 class GUICategory:
-    def __init__(self, db_manager):
+    def __init__(self, db_manager,on_close_callback):
         self.db_manager = db_manager
         self.category_id = None
+        self.on_close_callback = on_close_callback
         self.root = tk.Tk()
         self.root.title("Thêm Danh Mục")
         self.root.geometry("500x500")
         self.app_logic_instance = AppLogic()
         self.create_widgets()
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def create_widgets(self):
         main_frame = tk.Frame(self.root)
@@ -88,7 +90,16 @@ class GUICategory:
             self.add_category_button.destroy()
 
     def close_window(self):
-        self.root.destroy()
+        if messagebox.askokcancel("Xác nhận", "Bạn có muốn đóng cửa sổ này?"):
+            self.root.destroy()
+            if self.on_close_callback:
+                self.on_close_callback()
+
+    def on_close(self):
+        if messagebox.askokcancel("Xác nhận", "Bạn có muốn đóng cửa sổ này?"):
+            self.root.destroy()
+            if self.on_close_callback:
+                self.on_close_callback()
 
     def run(self):
         self.root.update_idletasks()  # Hiển thị cửa sổ trước khi thực hiện các thay đổi
@@ -96,7 +107,7 @@ class GUICategory:
         x = (self.root.winfo_screenwidth() - self.root.winfo_reqwidth()) / 2
         y = (self.root.winfo_screenheight() - self.root.winfo_reqheight()) / 2
         self.root.geometry("+%d+%d" % (x, y))
-        self.root.mainloop()
+        # self.root.mainloop()
 
 
 if __name__ == "__main__":
