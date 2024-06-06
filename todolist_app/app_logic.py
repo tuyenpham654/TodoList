@@ -46,7 +46,7 @@ class AppLogic:
             db_manager.use_database()
 
             user_id = user[0]  # Assuming the first field is user_id
-            query = "SELECT * FROM tasks WHERE user_id = ? AND deleted_at IS NULL AND status = 1"
+            query = "SELECT t.*,c.color FROM tasks t join categories c on t.category_id=c.category_id WHERE t.user_id = ? AND t.deleted_at IS NULL AND t.status = 1"
             db_manager.cursor.execute(query, (user_id,))
             tasks = db_manager.cursor.fetchall()
             
@@ -65,7 +65,7 @@ class AppLogic:
             db_manager.use_database()
 
             user_id = user[0]  # Assuming the first field is user_id
-            query = "SELECT * FROM tasks WHERE user_id = ? AND status != 1"
+            query = "SELECT t.*,c.color FROM tasks t join categories c on t.category_id=c.category_id WHERE t.user_id = ? AND t.status != 1"
             db_manager.cursor.execute(query, (user_id,))
             tasks = db_manager.cursor.fetchall()
             
@@ -444,7 +444,7 @@ class AppLogic:
             db_manager.use_database()
 
             user_id = user[0]  # Assuming the first field is user_id
-            query = "SELECT * FROM tasks WHERE user_id = ? AND category_id = ? AND deleted_at IS NULL AND status = 1"
+            query = "SELECT t.*,c.color FROM tasks t join categories c on t.category_id=c.category_id WHERE t.user_id = ? AND t.category_id = ? AND t.deleted_at IS NULL AND t.status = 1"
             db_manager.cursor.execute(query, (user_id,category_id))
             tasks = db_manager.cursor.fetchall()
             
@@ -463,7 +463,7 @@ class AppLogic:
             db_manager.use_database()
 
             user_id = user[0]  # Assuming the first field is user_id
-            query = "SELECT * FROM tasks WHERE user_id = ? AND category_id = ? AND status != 1"
+            query = "SELECT t.*,c.color FROM tasks t join categories c on t.category_id=c.category_id WHERE t.user_id = ? AND t.category_id = ? AND t.status != 1"
             db_manager.cursor.execute(query, (user_id,category_id))
             tasks = db_manager.cursor.fetchall()
             
@@ -524,6 +524,49 @@ class AppLogic:
             print(f"Lỗi khi thực hiện truy vấn: {e}")
             return False
 
+    def update_category_color(self,db_manager,category_id ,color=None):
+        user = Auth.get_current_user()
+        if user is None:
+            print("No user is currently logged in.")
+            return False
+
+        try:
+            # Sử dụng cơ sở dữ liệu TodoList
+            db_manager.use_database()
+
+            current_datetime = datetime.now()
+
+           # Tạo câu lệnh SQL UPDATE dựa trên các tham số được cung cấp
+            update_fields = []
+            update_values = []
+
+            if color is not None:
+                update_fields.append("color = ?")
+                update_values.append(color)
+
+            # Nếu không có trường nào được cập nhật, thông báo và kết thúc
+            if not update_fields:
+                print("No fields to update.")
+                return False
+
+            # Thêm trường updated_at vào danh sách cập nhật
+            update_fields.append("updated_at = ?")
+            update_values.append(current_datetime)
+
+            # Thêm task_id vào danh sách giá trị cho điều kiện WHERE
+            update_values.append(category_id)
+
+            # Tạo câu lệnh SQL UPDATE hoàn chỉnh
+            update_query = f"""UPDATE categories SET {', '.join(update_fields)} WHERE category_id = ?"""
+
+            # Thực hiện truy vấn UPDATE
+            db_manager.cursor.execute(update_query, tuple(update_values))
+            db_manager.conn.commit()
+            print("Category updated successfully!")
+            return True
+        except pyodbc.Error as e:
+            print(f"Lỗi khi thực hiện truy vấn: {e}")
+            return False
 
 
 

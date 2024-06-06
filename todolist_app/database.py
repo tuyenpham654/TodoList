@@ -62,6 +62,8 @@ class DatabaseManager:
                                         category_id INT PRIMARY KEY IDENTITY(1,1),
                                         category_name VARCHAR(255) UNIQUE NOT NULL,
                                         description TEXT,
+                                        user_id int,
+                                        color nvarchar(50),
                                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                                         deleted_at DATETIME NULL,
