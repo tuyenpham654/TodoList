@@ -163,6 +163,7 @@ class AppLogic:
         except pyodbc.Error as e:
             print(f"Lỗi khi thực hiện truy vấn: {e}")
             return False
+    
     def get_task_by_id(self, db_manager, task_id):
         query = "SELECT * FROM tasks WHERE task_id = ? AND deleted_at IS NULL AND status = 1"
         result = db_manager.cursor.execute(query, (task_id,))
@@ -380,9 +381,9 @@ class AppLogic:
     def get_category_by_id(self, db_manager, category_id):
         query = "SELECT * FROM categories WHERE category_id = ? AND deleted_at IS NULL AND status = 1"
         result = db_manager.cursor.execute(query, (category_id,))
-        task = result.fetchone() 
-        print(task)
-        return task
+        cate = result.fetchone() 
+        print(cate)
+        return cate
     
     def update_category(self, db_manager, category_id, name=None, description=None):
         user = Auth.get_current_user()
@@ -471,7 +472,57 @@ class AppLogic:
             print(f"Lỗi khi thực hiện truy vấn: {e}")
             return []
 
+    def update_category(self, db_manager, category_id, category_name=None, description=None):
+        user = Auth.get_current_user()
+        if user is None:
+            print("No user is currently logged in.")
+            return False
 
+        try:
+            # Sử dụng cơ sở dữ liệu TodoList
+            db_manager.use_database()
+
+            current_datetime = datetime.now()
+
+            # Tạo câu lệnh SQL UPDATE dựa trên các tham số được cung cấp
+            update_fields = []
+            update_values = []
+
+            if category_name is not None:
+                update_fields.append("category_name = ?")
+                update_values.append(category_name)
+
+            if category_id is not None:
+                update_fields.append("user_id = ?")
+                update_values.append(category_id)
+
+            if description is not None:
+                update_fields.append("description = ?")
+                update_values.append(description)
+
+            # Nếu không có trường nào được cập nhật, thông báo và kết thúc
+            if not update_fields:
+                print("No fields to update.")
+                return False
+
+            # Thêm trường updated_at vào danh sách cập nhật
+            update_fields.append("updated_at = ?")
+            update_values.append(current_datetime)
+
+            # Thêm task_id vào danh sách giá trị cho điều kiện WHERE
+            update_values.append(category_id)
+
+            # Tạo câu lệnh SQL UPDATE hoàn chỉnh
+            update_query = f"""UPDATE categories SET {', '.join(update_fields)} WHERE category_id = ?"""
+
+            # Thực hiện truy vấn UPDATE
+            db_manager.cursor.execute(update_query, tuple(update_values))
+            db_manager.conn.commit()
+            print("Category updated successfully!")
+            return True
+        except pyodbc.Error as e:
+            print(f"Lỗi khi thực hiện truy vấn: {e}")
+            return False
 
 
 

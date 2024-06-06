@@ -8,11 +8,9 @@ class GUICategory:
         self.db_manager = db_manager
         self.category_id = None
         self.root = tk.Tk()
-        self.root.title("Thêm Nhiệm Vụ")
+        self.root.title("Thêm Danh Mục")
         self.root.geometry("500x500")
         self.app_logic_instance = AppLogic()
-        # self.categories_dict = {}
-        self.use_due_date = tk.BooleanVar(value=False)  
         self.create_widgets()
 
     def create_widgets(self):
@@ -49,12 +47,6 @@ class GUICategory:
 
         close_button = tk.Button(button_frame, text="Đóng", command=self.close_window)
         close_button.grid(row=8, column=1, padx=5, pady=10)
-    
-    def toggle_date_entry(self):
-        if self.use_due_date.get():
-            self.due_date_entry.config(state="normal")
-        else:
-            self.due_date_entry.config(state="disabled")
 
     def add_category(self):
         name = self.name_entry.get()

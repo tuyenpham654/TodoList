@@ -40,6 +40,12 @@ class App:
             self.gui_task = GUITask(self.db_manager)
             self.gui_task.set_task_id(id)
             self.gui_task.run()
+    
+    def update_category(self, id):
+        if self.gui_category is None:
+            self.gui_category = GUICategory(self.db_manager)
+            self.gui_category.set_category_id(id)
+            self.gui_category.run()
 
 
     def delete_task(self, parent, id):
@@ -124,7 +130,7 @@ class App:
 
             option_menu = tk.Menu(option_button, tearoff=False)
             option_button.configure(menu=option_menu)
-            option_menu.add_command(label="Sửa", compound=tk.LEFT, command=lambda id=cate[0]: self.show_change_pass_gui(id))
+            option_menu.add_command(label="Sửa", compound=tk.LEFT, command=lambda id=cate[0]: self.update_category(id))
             option_menu.add_command(label="Xóa", compound=tk.LEFT, command=lambda id=cate[0]: self.delete_category(id))
 
         # cal = Calendar(sidebar_frame, selectmode="day", year=today.year, month=today.month, day=today.day)
@@ -302,9 +308,20 @@ class App:
             task_frame.grid(row=i, column=0, padx=10, pady=5, sticky="nw") 
 
             category_name = cate[1]  # Assuming the second field is the category name
+            category_description = cate[2]  # Assuming the third field is the task description
 
-            title_label = tk.Button(task_frame, text=category_name, font=("Arial", 12), width=10)
-            title_label.grid()
+            title_label = tk.Button(task_frame, text=category_name, font=("Arial", 12), width=10,command= lambda id=cate[0]:self.refresh_task_categories(id))
+            title_label.grid(row=i,column=0)
+
+
+
+            option_button = tk.Menubutton(task_frame, text="...", relief="raised")
+            option_button.grid(row=i,column=1)
+
+            option_menu = tk.Menu(option_button, tearoff=False)
+            option_button.configure(menu=option_menu)
+            option_menu.add_command(label="Sửa", compound=tk.LEFT, command=lambda id=cate[0]: self.update_category(id))
+            option_menu.add_command(label="Xóa", compound=tk.LEFT, command=lambda id=cate[0]: self.delete_category(id))
 
     def show_curent_tasks_by_category(self,category_id):
         self.show_other_tasks_by_category(category_id)
