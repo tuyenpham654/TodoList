@@ -4,7 +4,7 @@ from tkcalendar import DateEntry
 from app_logic import AppLogic
 
 class GUITask:
-    def __init__(self, db_manager):
+    def __init__(self, db_manager, on_close_callback):
         self.db_manager = db_manager
         self.task_id = None
         self.root = tk.Tk()
@@ -14,6 +14,8 @@ class GUITask:
         self.categories_dict = {}
         self.use_due_date = tk.BooleanVar(value=False)  
         self.create_widgets()
+        self.on_close_callback = on_close_callback
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def create_widgets(self):
         main_frame = tk.Frame(self.root)
@@ -55,12 +57,23 @@ class GUITask:
         due_date_frame = tk.Frame(main_frame)
         due_date_frame.pack()
 
-        self.checkbox = tk.Checkbutton(due_date_frame, text="Ngày Hết Hạn (dd/mm/YYYY):", variable=self.use_due_date, command=self.toggle_date_entry)
-        self.checkbox.grid(row=1, column=0, sticky="w")
+        # self.checkbox = tk.Checkbutton(due_date_frame, text="Ngày Hết Hạn (dd/mm/YYYY):", variable=self.use_due_date, command=self.toggle_date_entry)
+        # self.checkbox.grid(row=1, column=0, sticky="w")
 
         self.due_date_entry = DateEntry(due_date_frame, width=50, background='darkblue', foreground='white', borderwidth=2)
         self.due_date_entry.grid(row=2, column=0)
-        self.due_date_entry.config(selectmode='day', date_pattern='dd/MM/yyyy', width=14, state="disabled")  # Khởi tạo ở trạng thái vô hiệu hóa
+        # self.due_date_entry.config(selectmode='day', date_pattern='dd/MM/yyyy', width=14, state="disabled") 
+        self.due_date_entry.config(selectmode='day', date_pattern='dd/MM/yyyy', width=14) 
+
+        repeat_frame = tk.Frame(main_frame)
+        repeat_frame.pack()
+
+        repeat_label = tk.Label(repeat_frame, text="Lặp Lại:")
+        repeat_label.grid(row=6, column=0, sticky="w")
+        
+        self.repeat_combobox = ttk.Combobox(repeat_frame, values=["Không", "Hàng Ngày", "Hàng Tuần", "Hàng Tháng"], state="readonly")
+        self.repeat_combobox.current(0)
+        self.repeat_combobox.grid(row=7, column=0, pady=5)
 
         button_frame = tk.Frame(main_frame)
         button_frame.pack()
@@ -71,16 +84,18 @@ class GUITask:
         close_button = tk.Button(button_frame, text="Đóng", command=self.close_window)
         close_button.grid(row=8, column=1, padx=5, pady=10)
     
-    def toggle_date_entry(self):
-        if self.use_due_date.get():
-            self.due_date_entry.config(state="normal")
-        else:
-            self.due_date_entry.config(state="disabled")
+    # @classmethod
+    # def toggle_date_entry(cls):
+    #     if cls.use_due_date.get():
+    #         cls.due_date_entry.config(state="normal")
+    #     else:
+    #         cls.due_date_entry.config(state="disabled")
 
     def add_task(self):
         title = self.title_entry.get()
         description = self.description_entry.get()
         selected_category = self.category_combobox.get()
+        repeat = self.repeat_combobox.get()
         
         # Tìm category_id tương ứng trong từ điển categories_dict
         category_id = None
@@ -88,12 +103,22 @@ class GUITask:
             if value == selected_category:
                 category_id = key
                 break
-        if self.use_due_date.get():
-            due_date = self.due_date_entry.get_date().strftime('%d/%m/%Y')
-        else:
-            due_date = None
+        due_date_str = self.due_date_entry.get_date().strftime('%d/%m/%Y')
+
+        # if self.use_due_date.get():
+        #     due_date = self.due_date_entry.get_date().strftime('%d/%m/%Y')
+        # else:
+        #     due_date = None
         
-        if self.app_logic_instance.add_task(self.db_manager, title, category_id, description, due_date):
+        repeat_mapping = {
+            "Không": "none",
+            "Hàng Ngày": "daily",
+            "Hàng Tuần": "weekly",
+            "Hàng Tháng": "monthly"
+        }
+        repeat_value = repeat_mapping.get(repeat, "none")
+        print(repeat_value )
+        if self.app_logic_instance.add_task(self.db_manager, title, category_id, description, due_date_str, repeat_value):
             messagebox.showinfo("Thành công", "Nhiệm vụ đã được thêm thành công")
             self.root.destroy()
         else:
@@ -146,7 +171,11 @@ class GUITask:
             self.add_task_button.destroy()
 
     def close_window(self):
-        self.root.destroy()
+       if messagebox.askokcancel("Xác nhận", "Bạn có muốn đóng cửa sổ này?"):
+            self.root.destroy()
+            if self.on_close_callback:
+                self.on_close_callback()
+
 
     def run(self):
         self.root.update_idletasks()  # Hiển thị cửa sổ trước khi thực hiện các thay đổi

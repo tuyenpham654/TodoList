@@ -77,6 +77,7 @@ class DatabaseManager:
                                         title VARCHAR(255) NOT NULL,
                                         description TEXT,
                                         due_date DATE,
+                                        repeat TEXT NOT NULL,
                                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                                         deleted_at DATETIME NULL,

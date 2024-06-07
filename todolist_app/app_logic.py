@@ -1,5 +1,5 @@
 import pyodbc
-from datetime import datetime
+from datetime import datetime, timedelta
 class Auth:
     current_user = None
     
@@ -69,7 +69,30 @@ class AppLogic:
             print(f"Lỗi khi thực hiện truy vấn: {e}")
             return []
 
-    def add_task(self, db_manager, title, category_id=None, description=None, due_date=None):
+    # def add_task(self, db_manager, title, category_id=None, description=None, due_date=None):
+    #     user = Auth.get_current_user()
+    #     if user is None:
+    #         print("No user is currently logged in.")
+    #         return False
+        
+    #     try:
+    #         # Sử dụng cơ sở dữ liệu TodoList
+    #         db_manager.use_database()
+
+    #         user_id = user[0]  # Assuming the first field is user_id
+    #         query = """INSERT INTO tasks (user_id, category_id, title, description, due_date, updated_at, created_at, status) 
+    #                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
+    #         current_datetime = datetime.now()
+    #         status = 1 
+    #         db_manager.cursor.execute(query, (user_id, category_id, title, description, due_date, current_datetime, current_datetime, status))
+    #         db_manager.conn.commit()
+    #         print("Task added successfully!")
+    #         return True
+    #     except pyodbc.Error as e:
+    #         print(f"Lỗi khi thực hiện truy vấn: {e}")
+    #         return False
+    
+    def add_task(self, db_manager, title, category_id=None, description=None, due_date_str=None, repeat_value=None):
         user = Auth.get_current_user()
         if user is None:
             print("No user is currently logged in.")
@@ -79,18 +102,62 @@ class AppLogic:
             # Sử dụng cơ sở dữ liệu TodoList
             db_manager.use_database()
 
-            user_id = user[0]  # Assuming the first field is user_id
-            query = """INSERT INTO tasks (user_id, category_id, title, description, due_date, updated_at, created_at, status) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
-            current_datetime = datetime.now()
+            user_id = user[0]  # Giả sử trường đầu tiên là user_id
             status = 1 
-            db_manager.cursor.execute(query, (user_id, category_id, title, description, due_date, current_datetime, current_datetime, status))
-            db_manager.conn.commit()
+            if due_date_str:
+                due_date = datetime.strptime(due_date_str, '%d/%m/%Y')
+            else:
+                due_date = current_datetime
+            current_datetime = datetime.now()
+
+            if repeat_value == 'daily':
+                # Thêm nhiệm vụ hàng ngày
+                self.add_daily_tasks(db_manager, user_id, category_id, title, description, due_date, repeat_value, current_datetime, status)
+            elif repeat_value == 'monthly':
+                # Thêm nhiệm vụ hàng tháng
+                self.add_monthly_tasks(db_manager, user_id, category_id, title, description, due_date, repeat_value, current_datetime, status)
+            else:
+                # Thêm nhiệm vụ không lặp lại
+                self.add_single_task(db_manager, user_id, category_id, title, description, due_date, current_datetime, status)
+
             print("Task added successfully!")
             return True
         except pyodbc.Error as e:
             print(f"Lỗi khi thực hiện truy vấn: {e}")
             return False
+
+    def add_daily_tasks(self, db_manager, user_id, category_id, title, description, due_date, repeat_value, current_datetime, status):
+        # Tính toán và thêm nhiệm vụ cho mỗi ngày trong khoảng thời gian từ due_date đến current_datetime
+        days_diff = (due_date - current_datetime).days
+        
+        for i in range(days_diff + 1):
+            repeat_date = current_datetime + timedelta(days=i)
+            self.add_single_task(db_manager, user_id, category_id, title, description, due_date, repeat_value, current_datetime, status)
+
+    def add_monthly_tasks(self, db_manager, user_id, category_id, title, description, due_date, current_datetime, status):
+        # Tính toán và thêm nhiệm vụ cho mỗi tháng trong khoảng thời gian từ due_date đến current_datetime
+        months_diff = (due_date.year - current_datetime.year) * 12 + due_date.month - current_datetime.month
+        
+        for i in range(months_diff + 1):
+            repeat_date = self.calculate_monthly_repeat_date(current_datetime, i)
+            self.add_single_task(db_manager, user_id, category_id, title, description, repeat_date, current_datetime, status)
+
+    def add_single_task(self, db_manager, user_id, category_id, title, description, due_date, repeat_value, current_datetime, status):
+        # Thêm chỉ một bản ghi vào cơ sở dữ liệu
+        query = """INSERT INTO tasks (user_id, category_id, title, description, due_date, repeat, updated_at, created_at, status) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        db_manager.cursor.execute(query, (user_id, category_id, title, description, due_date, repeat_value, current_datetime, current_datetime, status))
+        db_manager.conn.commit()
+
+    def calculate_monthly_repeat_date(self, current_datetime, month_offset):
+        # Tính toán ngày của tháng được lặp lại bằng cách thêm số tháng vào current_datetime
+        repeat_date = current_datetime.replace(day=1) + timedelta(days=month_offset * 30)
+        
+        # Xử lý trường hợp năm nhuận: nếu tháng được lặp lại là tháng 2 và năm là năm nhuận, sử dụng 29 ngày
+        if repeat_date.month == 2 and (repeat_date.year % 4 == 0 and (repeat_date.year % 100 != 0 or repeat_date.year % 400 == 0)):
+            repeat_date += timedelta(days=28)
+            
+        return repeat_date
         
     def destroy_task(self, db_manager, task_id):
         user = Auth.get_current_user()
