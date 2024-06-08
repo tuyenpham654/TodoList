@@ -36,18 +36,21 @@ class App:
         else:
             # Hiển thị thông báo khi xảy ra lỗi trong quá trình đánh dấu hoàn thành nhiệm vụ
             messagebox.showerror("Lỗi", "Đã xảy ra lỗi khi đánh dấu hoàn thành nhiệm vụ.")
+        self.refresh_tasks()
 
     def update_task(self, parent, id):
         if self.gui_task is None:
-            self.gui_task = GUITask(self.db_manager,self.on_gui_close)
+            self.gui_task = GUITask(self.db_manager,self.on_gui_close, self.refresh_tasks)
             self.gui_task.set_task_id(id)
             self.gui_task.run()
+            self.refresh_tasks()
     
     def update_category(self, id):
         if self.gui_category is None:
-            self.gui_category = GUICategory(self.db_manager,self.on_gui_close)
+            self.gui_category = GUICategory(self.db_manager,self.on_gui_close,self.refresh_tasks)
             self.gui_category.set_category_id(id)
             self.gui_category.run()
+            self.refresh_tasks()
 
     def delete_task(self, parent, id):
         confirm = messagebox.askokcancel("Xác nhận", "Bạn có chắc chắn muốn xoá nhiệm vụ này?")
@@ -58,6 +61,7 @@ class App:
             else:
                 # Hiển thị thông báo khi xảy ra lỗi trong quá trình xóa nhiệm vụ
                 messagebox.showerror("Lỗi", "Đã xảy ra lỗi khi xóa nhiệm vụ.")
+        self.refresh_tasks()
 
     def delete_category(self, parent, id):
         confirm = messagebox.askokcancel("Xác nhận", "Bạn có chắc chắn muốn xoá nhiệm vụ này?")
@@ -68,6 +72,7 @@ class App:
             else:
                 # Hiển thị thông báo khi xảy ra lỗi trong quá trình xóa nhiệm vụ
                 messagebox.showerror("Lỗi", "Đã xảy ra lỗi khi xóa nhiệm vụ.")
+        self.refresh_tasks()
 
     def choose_color(self,id):
         # Hiển thị hộp chọn màu
@@ -75,6 +80,7 @@ class App:
         # In ra màu được chọn
         # print(f"đã được chọn: {color}")
         self.update_category_color(color,id)
+        self.refresh_tasks()
 
     def update_category_color(self,color,id):
         self.app_logic_instance.update_category_color(self.db_manager,id,color)
@@ -464,12 +470,12 @@ class App:
 
     def show_task_gui(self):
         if self.gui_task is None:
-            self.gui_task = GUITask(self.db_manager,self.on_gui_close)
+            self.gui_task = GUITask(self.db_manager,self.on_gui_close, self.refresh_tasks)
             self.gui_task.run()
 
     def show_category_gui(self):
         if self.gui_category is None:
-            self.gui_category = GUICategory(self.db_manager,self.on_gui_close)
+            self.gui_category = GUICategory(self.db_manager,self.on_gui_close,self.refresh_tasks)
             self.gui_category.run()
 
     def show_user_gui(self, id):

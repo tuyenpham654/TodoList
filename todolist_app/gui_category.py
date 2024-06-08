@@ -4,10 +4,11 @@ from tkcalendar import DateEntry
 from app_logic import AppLogic
 
 class GUICategory:
-    def __init__(self, db_manager,on_close_callback):
+    def __init__(self, db_manager,on_close_callback,refresh_callback):
         self.db_manager = db_manager
         self.category_id = None
         self.on_close_callback = on_close_callback
+        self.refresh_callback = refresh_callback
         self.root = tk.Tk()
         self.root.title("Thêm Danh Mục")
         self.root.geometry("500x500")
@@ -56,10 +57,10 @@ class GUICategory:
 
         if self.app_logic_instance.add_category(self.db_manager, name, description):
             messagebox.showinfo("Thành công", "Nhiệm vụ đã được thêm thành công")
-            self.root.destroy()
+            self.on_close()
         else:
             messagebox.showerror("Lỗi", "Thêm nhiệm vụ thất bại")
-
+        self.refresh_callback()
     def set_category_id(self, category_id):
         self.category_id = category_id
         self.is_update_mode = True
@@ -81,13 +82,15 @@ class GUICategory:
         
         if category_id and self.app_logic_instance.update_category(self.db_manager, category_id, name, description):
             messagebox.showinfo("Thành công", "Nhiệm vụ đã được cập nhật thành công")
-            self.root.destroy()
+            self.on_close()
         else:
             messagebox.showerror("Lỗi", "Cập nhật nhiệm vụ thất bại")
+        self.refresh_callback()
     
     def destroy_add_category_button(self):
         if self.category_updated:
             self.add_category_button.destroy()
+        self.refresh_callback()
 
     def close_window(self):
         if messagebox.askokcancel("Xác nhận", "Bạn có muốn đóng cửa sổ này?"):
@@ -96,10 +99,10 @@ class GUICategory:
                 self.on_close_callback()
 
     def on_close(self):
-        if messagebox.askokcancel("Xác nhận", "Bạn có muốn đóng cửa sổ này?"):
-            self.root.destroy()
-            if self.on_close_callback:
-                self.on_close_callback()
+        
+        self.root.destroy()
+        if self.on_close_callback:
+            self.on_close_callback()
 
     def run(self):
         self.root.update_idletasks()  # Hiển thị cửa sổ trước khi thực hiện các thay đổi

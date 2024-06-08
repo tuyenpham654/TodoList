@@ -4,7 +4,7 @@ from tkcalendar import DateEntry
 from app_logic import AppLogic
 
 class GUITask:
-    def __init__(self, db_manager,on_close_callback):
+    def __init__(self, db_manager,on_close_callback, refresh_callback):
         self.db_manager = db_manager
         self.task_id = None
         self.root = tk.Tk()
@@ -15,6 +15,7 @@ class GUITask:
         self.use_due_date = tk.BooleanVar(value=False)  
         self.create_widgets()
         self.on_close_callback = on_close_callback
+        self.refresh_callback = refresh_callback
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         
     def create_widgets(self):
@@ -97,9 +98,10 @@ class GUITask:
         
         if self.app_logic_instance.add_task(self.db_manager, title, category_id, description, due_date):
             messagebox.showinfo("Thành công", "Nhiệm vụ đã được thêm thành công")
-            self.root.destroy()
+            self.on_close()
         else:
             messagebox.showerror("Lỗi", "Thêm nhiệm vụ thất bại")
+        self.refresh_callback()
 
     def set_task_id(self, task_id):
         self.task_id = task_id
@@ -139,13 +141,15 @@ class GUITask:
         
         if task_id and self.app_logic_instance.update_task(self.db_manager, task_id, title, category_id, description, due_date):
             messagebox.showinfo("Thành công", "Nhiệm vụ đã được cập nhật thành công")
-            self.root.destroy()
+            self.on_close()
         else:
             messagebox.showerror("Lỗi", "Cập nhật nhiệm vụ thất bại")
+        self.refresh_callback()
     
     def destroy_add_task_button(self):
         if self.task_updated:
             self.add_task_button.destroy()
+        self.refresh_callback()
 
     def close_window(self):
         if messagebox.askokcancel("Xác nhận", "Bạn có muốn đóng cửa sổ này?"):
@@ -154,10 +158,9 @@ class GUITask:
                 self.on_close_callback()
 
     def on_close(self):
-        if messagebox.askokcancel("Xác nhận", "Bạn có muốn đóng cửa sổ này?"):
-            self.root.destroy()
-            if self.on_close_callback:
-                self.on_close_callback()
+        self.root.destroy()
+        if self.on_close_callback:
+            self.on_close_callback()
     def run(self):
         self.root.update_idletasks()  # Hiển thị cửa sổ trước khi thực hiện các thay đổi
         # Hiển thị cửa sổ đăng nhập giữa màn hình
