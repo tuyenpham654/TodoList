@@ -7,6 +7,7 @@ from gui_task import GUITask
 from gui_user import GUIUser, ChangePassword
 from app_logic import Auth
 import datetime
+import calendar
 import tkinter.messagebox as messagebox
 
 class App:
@@ -15,6 +16,7 @@ class App:
         self.root = tk.Tk()
         self.root.title("TodoList")
         self.root.state("zoomed")
+        self.current_month = datetime.date.today().month
 
         self.app_logic_instance = AppLogic()
 
@@ -32,12 +34,14 @@ class App:
         else:
             # Hiển thị thông báo khi xảy ra lỗi trong quá trình đánh dấu hoàn thành nhiệm vụ
             messagebox.showerror("Lỗi", "Đã xảy ra lỗi khi đánh dấu hoàn thành nhiệm vụ.")
+        self.refresh_tasks()
 
     def update_task(self, parent, id):
         if self.gui_task is None:
-            self.gui_task = GUITask(self.db_manager)
+            self.gui_task = GUITask(self.db_manager, self.on_gui_close, self.refresh_tasks)
             self.gui_task.set_task_id(id)
             self.gui_task.run()
+            self.refresh_tasks()
 
 
     def delete_task(self, parent, id):
@@ -49,6 +53,7 @@ class App:
             else:
                 # Hiển thị thông báo khi xảy ra lỗi trong quá trình xóa nhiệm vụ
                 messagebox.showerror("Lỗi", "Đã xảy ra lỗi khi xóa nhiệm vụ.")
+        self.refresh_tasks()
 
     def create_widgets(self):
         header_frame = tk.Frame(self.root, height=20, bg="lightgrey")
@@ -109,22 +114,44 @@ class App:
         self.content_frame_bottom = tk.Frame(self.content_frame, bg="white")
         self.content_frame_bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
 
-        # Widgets trong phần trên (Đang làm)
-        doing_label = tk.Label(self.content_frame_top, text="Đang làm", font=("Arial", 14), bg="white")
-        doing_label.pack(padx=10, pady=10, anchor="nw")
-        user_tasks = self.app_logic_instance.get_user_tasks(self.db_manager)
+       # Widgets trong phần trên (Đang làm)
+        today = datetime.date.today()
+        current_month = today.month
+
+        # Tạo một khung chứa nhãn "Tháng" và cả hai nút "Trước" và "Sau"
+        month_frame = tk.Frame(self.content_frame_top)
+        month_frame.pack(anchor="nw", padx=10, pady=10)
+
+        # Button "Trước"
+        self.prev_month_button = tk.Button(month_frame, text="<<", command=self.show_previous_month)
+        self.prev_month_button.pack(side=tk.LEFT)  # Đặt khoảng cách từ trái
+
+        # Nhãn "Tháng"
+        self.month_label = tk.Label(month_frame, text=f"Tháng {current_month}", font=("Arial", 14), bg="white")
+        self.month_label.pack(side=tk.LEFT)  # Đặt khoảng cách từ cả hai bên
+
+        # Button "Sau"
+        self.next_month_button = tk.Button(month_frame, text=">>", command=self.show_next_month)
+        self.next_month_button.pack(side=tk.RIGHT)  # Đặt khoảng cách từ phải
+
+        user_tasks = self.app_logic_instance.get_user_tasks_by_month(self.db_manager, self.current_month)
         for task in user_tasks:
             task_frame = tk.Frame(self.content_frame_top, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
             task_frame.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
 
-            task_title = task[3]  # Assuming the second field is the task title
-            task_description = task[4]  # Assuming the third field is the task description
-
+            task_title = task[3]
+            task_description = task[4] 
+            task_start_day = task[6]
+            
             title_label = tk.Label(task_frame, text=task_title, font=("Arial", 16), width=10)
-            title_label.pack()
+            title_label.pack(expand=True, fill="both")
 
-            description_label = tk.Label(task_frame, text=task_description, font=("Arial", 12), width=10, height=5)
-            description_label.pack()
+            task_start_day_label = tk.Label(task_frame, text=f"Ngày: {task_start_day}", font=("Arial", 12), width=10, pady=10)
+            task_start_day_label.pack(expand=True, fill="both")
+
+            if task_description is not None:
+                description_label = tk.Label(task_frame, text=f"Mô tả: {task_description}", font=("Arial", 10), width=10, height=2, pady=10)
+                description_label.pack(expand=True, fill="both")
 
             # Tạo một Frame để chứa các button và sử dụng grid để căn giữa và đồng bộ width
             button_frame = tk.Frame(task_frame)
@@ -140,21 +167,23 @@ class App:
             delete_button.grid(row=2, column=0, padx=5, pady=5)
 
         # Widgets trong phần dưới (Hoàn thành)
-        completed_label = tk.Label(self.content_frame_bottom, text="Khác", font=("Arial", 14), bg="white")
-        completed_label.pack(padx=10, pady=10, anchor="nw")
-        user_tasks = self.app_logic_instance.get_user_tasks_other(self.db_manager)
+        other_task_label = tk.Label(self.content_frame_bottom, text="Khác", font=("Arial", 14), bg="white")
+        other_task_label.pack(padx=10, pady=10, anchor="nw")
+        user_tasks = self.app_logic_instance.get_user_tasks_other(self.db_manager, current_month)
         for task in user_tasks:
             task_frame = tk.Frame(self.content_frame_bottom, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
             task_frame.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
             task_title = task[3] 
             task_description = task[4]
-            task_status = task[9]
+            task_status = task[11]
 
             title_label = tk.Label(task_frame, text=task_title, font=("Arial", 16), width=10)
             title_label.pack()
 
-            description_label = tk.Label(task_frame, text=task_description, font=("Arial", 12), width=10, height=5)
-            description_label.pack()
+            if task_description is not None:
+                description_label = tk.Label(task_frame, text=f"Mô tả: {task_description}", font=("Arial", 10), width=10, height=2, pady=10)
+                description_label.pack(expand=True, fill="both")
+
 
             status_text = ""
             status_color = ""
@@ -168,7 +197,7 @@ class App:
             status_label = tk.Label(task_frame, text=status_text, font=("Arial", 12), foreground=status_color)
             status_label.pack()
     
-    def refresh_tasks(self):
+    def refresh_tasks(self, current_month):
     # Xóa nhiệm vụ hiện có trên giao diện
         for widget in self.content_frame_top.winfo_children():
             widget.destroy()
@@ -176,27 +205,49 @@ class App:
         for widget in self.content_frame_bottom.winfo_children():
             widget.destroy()
 
-        self.show_current_tasks()
-        self.show_other_tasks()
+        self.show_current_tasks(current_month)
+        self.show_other_tasks(current_month)
 
-    def show_current_tasks(self):
-        doing_label = tk.Label(self.content_frame_top, text="Đang làm", font=("Arial", 14), bg="white")
-        doing_label.pack(padx=10, pady=10, anchor="nw")
-        user_tasks = self.app_logic_instance.get_user_tasks(self.db_manager)
+    def show_current_tasks(self, current_month):
+        # Widgets trong phần trên (Đang làm)
+        today = datetime.date.today()
+
+        # Tạo một khung chứa nhãn "Tháng" và cả hai nút "Trước" và "Sau"
+        month_frame = tk.Frame(self.content_frame_top)
+        month_frame.pack(anchor="nw", padx=10, pady=10)
+
+        # Button "Trước"
+        self.prev_month_button = tk.Button(month_frame, text="<<", command=self.show_previous_month)
+        self.prev_month_button.pack(side=tk.LEFT)  # Đặt khoảng cách từ trái
+
+        # Nhãn "Tháng"
+        self.month_label = tk.Label(month_frame, text=f"Tháng {current_month}", font=("Arial", 14), bg="white")
+        self.month_label.pack(side=tk.LEFT)  # Đặt khoảng cách từ cả hai bên
+
+        # Button "Sau"
+        self.next_month_button = tk.Button(month_frame, text=">>", command=self.show_next_month)
+        self.next_month_button.pack(side=tk.RIGHT)  # Đặt khoảng cách từ phải
+
+        user_tasks = self.app_logic_instance.get_user_tasks_by_month(self.db_manager, self.current_month)
         for task in user_tasks:
             task_frame = tk.Frame(self.content_frame_top, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
             task_frame.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
 
-            task_title = task[3]  # Assuming the second field is the task title
-            task_description = task[4]  # Assuming the third field is the task description
-
+            task_title = task[3]
+            task_description = task[4] 
+            task_start_day = task[6]
+            
             title_label = tk.Label(task_frame, text=task_title, font=("Arial", 16), width=10)
-            title_label.pack()
+            title_label.pack(expand=True, fill="both")
 
-            description_label = tk.Label(task_frame, text=task_description, font=("Arial", 12), width=10, height=5)
-            description_label.pack()
+            task_start_day_label = tk.Label(task_frame, text=f"Ngày: {task_start_day}", font=("Arial", 12), width=10, pady=10)
+            task_start_day_label.pack(expand=True, fill="both")
 
-             # Tạo một Frame để chứa các button và sử dụng grid để căn giữa và đồng bộ width
+            if task_description is not None:
+                description_label = tk.Label(task_frame, text=f"Mô tả: {task_description}", font=("Arial", 10), width=10, height=2, pady=10)
+                description_label.pack(expand=True, fill="both")
+
+            # Tạo một Frame để chứa các button và sử dụng grid để căn giữa và đồng bộ width
             button_frame = tk.Frame(task_frame)
             button_frame.pack(side=tk.BOTTOM, padx=5, pady=5, anchor="w")
 
@@ -209,22 +260,25 @@ class App:
             delete_button = tk.Button(button_frame, text="Xoá", command=lambda id=task[0]: self.delete_task(task_frame, id), foreground="red", width=10)
             delete_button.grid(row=2, column=0, padx=5, pady=5)
 
-    def show_other_tasks(self):
-        completed_label = tk.Label(self.content_frame_bottom, text="Khác", font=("Arial", 14), bg="white")
-        completed_label.pack(padx=10, pady=10, anchor="nw")
-        user_tasks = self.app_logic_instance.get_user_tasks_other(self.db_manager)
+    def show_other_tasks(self, current_month):
+        # Widgets trong phần dưới (Hoàn thành)
+        other_task_label = tk.Label(self.content_frame_bottom, text="Khác", font=("Arial", 14), bg="white")
+        other_task_label.pack(padx=10, pady=10, anchor="nw")
+        user_tasks = self.app_logic_instance.get_user_tasks_other(self.db_manager, current_month)
         for task in user_tasks:
             task_frame = tk.Frame(self.content_frame_bottom, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
             task_frame.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
             task_title = task[3] 
             task_description = task[4]
-            task_status = task[9]
+            task_status = task[11]
 
             title_label = tk.Label(task_frame, text=task_title, font=("Arial", 16), width=10)
             title_label.pack()
 
-            description_label = tk.Label(task_frame, text=task_description, font=("Arial", 12), width=10, height=5)
-            description_label.pack()
+            if task_description is not None:
+                description_label = tk.Label(task_frame, text=f"Mô tả: {task_description}", font=("Arial", 10), width=10, height=2, pady=10)
+                description_label.pack(expand=True, fill="both")
+
 
             status_text = ""
             status_color = ""
@@ -237,6 +291,12 @@ class App:
 
             status_label = tk.Label(task_frame, text=status_text, font=("Arial", 12), foreground=status_color)
             status_label.pack()
+    
+
+    def on_gui_close(self):
+        self.gui_category=None
+        self.gui_task=None
+        self.gui_user=None
 
     def run(self):
         self.root.mainloop()
@@ -257,7 +317,7 @@ class App:
 
     def show_task_gui(self):
         if self.gui_task is None:
-            self.gui_task = GUITask(self.db_manager)
+            self.gui_task = GUITask(self.db_manager, self.on_gui_close, self.refresh_tasks)
             self.gui_task.run()
 
     def show_user_gui(self, id):
@@ -276,6 +336,25 @@ class App:
         user_name = self.app_logic_instance.get_user_name()
         if self.header_label is not None:
             self.header_label.config(text=f"Hi: {user_name}")
+
+    def show_previous_month(self):
+        if hasattr(self, 'current_month'):
+            self.current_month -= 1
+            if self.current_month == 0:
+                self.current_month = 12
+            if self.month_label.winfo_exists():
+                self.month_label.config(text=f"Tháng {self.current_month}")
+            self.refresh_tasks(self.current_month)
+
+    def show_next_month(self):
+        if hasattr(self, 'current_month'):
+            self.current_month += 1
+            if self.current_month == 13:
+                self.current_month = 1
+            if self.month_label.winfo_exists():
+                self.month_label.config(text=f"Tháng {self.current_month}")
+            self.refresh_tasks(self.current_month)
+
 
 
 if __name__ == "__main__":

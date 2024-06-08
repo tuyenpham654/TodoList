@@ -76,6 +76,7 @@ class DatabaseManager:
                                         category_id INT,
                                         title VARCHAR(255) NOT NULL,
                                         description TEXT,
+                                        start_date DATE,
                                         due_date DATE,
                                         repeat TEXT NOT NULL,
                                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
