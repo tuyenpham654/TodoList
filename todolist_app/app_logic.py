@@ -1,5 +1,5 @@
 import pyodbc
-from datetime import datetime
+from datetime import datetime, timedelta
 class Auth:
     current_user = None
     curret_category=None
@@ -36,44 +36,6 @@ class Auth:
 
 class AppLogic:
 
-    def get_user_tasks(self, db_manager):
-        user = Auth.get_current_user()
-        if user is None:
-            print("Chưa có người dùng nào đăng nhập.")
-            return []
-        try:
-            # Sử dụng cơ sở dữ liệu TodoList
-            db_manager.use_database()
-
-            user_id = user[0]  # Assuming the first field is user_id
-            query = "SELECT t.*,c.color FROM tasks t join categories c on t.category_id=c.category_id WHERE t.user_id = ? AND t.deleted_at IS NULL AND t.status = 1"
-            db_manager.cursor.execute(query, (user_id,))
-            tasks = db_manager.cursor.fetchall()
-            
-            return tasks
-        except pyodbc.Error as e:
-            print(f"Lỗi khi thực hiện truy vấn: {e}")
-            return []
-    
-    def get_user_tasks_other(self, db_manager):
-        user = Auth.get_current_user()
-        if user is None:
-            print("Chưa có người dùng nào đăng nhập.")
-            return []
-        try:
-            # Sử dụng cơ sở dữ liệu TodoList
-            db_manager.use_database()
-
-            user_id = user[0]  # Assuming the first field is user_id
-            query = "SELECT t.*,c.color FROM tasks t join categories c on t.category_id=c.category_id WHERE t.user_id = ? AND t.status != 1"
-            db_manager.cursor.execute(query, (user_id,))
-            tasks = db_manager.cursor.fetchall()
-            
-            return tasks
-        except pyodbc.Error as e:
-            print(f"Lỗi khi thực hiện truy vấn: {e}")
-            return []
-
     def get_user_categories(self, db_manager):
         user = Auth.get_current_user()
         if user is None:
@@ -93,28 +55,116 @@ class AppLogic:
             print(f"Lỗi khi thực hiện truy vấn: {e}")
             return []
 
-    def add_task(self, db_manager, title, category_id=None, description=None, due_date=None):
+
+    def get_user_tasks_by_month(self, db_manager, current_month):
         user = Auth.get_current_user()
         if user is None:
-            print("No user is currently logged in.")
-            return False
-        
+            print("Chưa có người dùng nào đăng nhập.")
+            return []
         try:
             # Sử dụng cơ sở dữ liệu TodoList
             db_manager.use_database()
 
             user_id = user[0]  # Assuming the first field is user_id
-            query = """INSERT INTO tasks (user_id, category_id, title, description, due_date, updated_at, created_at, status) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
-            current_datetime = datetime.now()
+            now = datetime.now()
+            start_of_month = now.replace(month=current_month, day=1)
+            if current_month == 12:
+                end_of_month = now.replace(year=now.year + 1, month=1, day=1) - timedelta(days=1)
+            else:
+                end_of_month = now.replace(month=current_month + 1, day=1) - timedelta(days=1)
+
+            query = """SELECT t.*,c.color FROM tasks t join categories c on t.category_id=c.category_id 
+                     WHERE t.user_id = ? AND t.deleted_at IS NULL AND t.status = 1
+                    AND t.due_date BETWEEN ? AND ?"""
+            db_manager.cursor.execute(query, (user_id, start_of_month, end_of_month))
+            tasks = db_manager.cursor.fetchall()
+            return tasks
+        except pyodbc.Error as e:
+            print(f"Lỗi khi thực hiện truy vấn: {e}")
+            return []
+
+        
+    def get_user_tasks_other(self, db_manager, current_month):
+        user = Auth.get_current_user()
+        if user is None:
+            print("Chưa có người dùng nào đăng nhập.")
+            return []
+        try:
+            # Sử dụng cơ sở dữ liệu TodoList
+            db_manager.use_database()
+
+            user_id = user[0]  # Giả sử trường đầu tiên là user_id
+            now = datetime.now()
+            start_of_month = now.replace(day=1)
+            if current_month == 12:
+                end_of_month = now.replace(year=now.year + 1, month=1, day=1) - timedelta(days=1)
+            else:
+                end_of_month = now.replace(month=current_month + 1, day=1) - timedelta(days=1)
+
+            query = """SELECT t.*,c.color FROM tasks t join categories c on t.category_id=c.category_id 
+                    WHERE t.user_id = ? AND t.deleted_at IS NULL AND t.status != 1
+                    AND t.due_date BETWEEN ? AND ?"""
+            db_manager.cursor.execute(query, (user_id, start_of_month, end_of_month))
+            tasks = db_manager.cursor.fetchall()
+            
+            return tasks
+        except pyodbc.Error as e:
+            print(f"Lỗi khi thực hiện truy vấn: {e}")
+            return []
+
+    def add_task(self, db_manager, title, category_id=None, description=None, start_date_str=None, repeat_value=None):
+        user = Auth.get_current_user()
+        if user is None:
+            print("No user is currently logged in.")
+            return False
+
+        try:
+            # Sử dụng cơ sở dữ liệu TodoList
+            db_manager.use_database()
+
+            user_id = user[0]  # Giả sử trường đầu tiên là user_id
             status = 1 
-            db_manager.cursor.execute(query, (user_id, category_id, title, description, due_date, current_datetime, current_datetime, status))
-            db_manager.conn.commit()
+            current_datetime = datetime.now()
+
+            if start_date_str:
+                start_date = datetime.strptime(start_date_str, '%d/%m/%Y')
+            else:
+                start_date = current_datetime
+
+            # Tự động tính toán due_date dựa trên repeat_value
+            if repeat_value == 'daily':
+                due_date = start_date + timedelta(days=1)
+            elif repeat_value == 'weekly':
+                due_date = start_date + timedelta(weeks=1)
+            elif repeat_value == 'monthly':
+                due_date = self.calculate_monthly_repeat_date(start_date, 1)
+            else:
+                due_date = current_datetime
+
+            # Thêm nhiệm vụ vào cơ sở dữ liệu
+            self.add_single_task(db_manager, user_id, category_id, title, description, start_date, due_date, repeat_value, current_datetime, status)
+
             print("Task added successfully!")
             return True
         except pyodbc.Error as e:
             print(f"Lỗi khi thực hiện truy vấn: {e}")
             return False
+
+    def add_single_task(self, db_manager, user_id, category_id, title, description, start_date, due_date, repeat_value, current_datetime, status):
+        # Thêm chỉ một bản ghi vào cơ sở dữ liệu
+        query = """INSERT INTO tasks (user_id, category_id, title, description, start_date, due_date, repeat, updated_at, created_at, status) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+        db_manager.cursor.execute(query, (user_id, category_id, title, description, start_date, due_date, repeat_value, current_datetime, current_datetime, status))
+        db_manager.conn.commit()
+
+    def calculate_monthly_repeat_date(self, start_date, month_offset):
+        # Tính toán ngày của tháng được lặp lại bằng cách thêm số tháng vào start_date
+        month = start_date.month - 1 + month_offset
+        year = start_date.year + month // 12
+        month = month % 12 + 1
+        day = min(start_date.day, [31, 29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1])
+        repeat_date = datetime(year, month, day)
+        return repeat_date
         
     def destroy_task(self, db_manager, task_id):
         user = Auth.get_current_user()
@@ -140,38 +190,13 @@ class AppLogic:
             print(f"Lỗi khi thực hiện truy vấn: {e}")
             return False
         
-    def destroy_category(self, db_manager, category_id):
-        user = Auth.get_current_user()
-        if user is None:
-            print("No user is currently logged in.")
-            return False  
-        try:
-            # Sử dụng cơ sở dữ liệu TodoList
-            db_manager.use_database()
-
-            user_id = user[0]  # Assuming the first field is user_id
-            query = """UPDATE category 
-                    SET deleted_at = ?,
-                    status = ?  
-                    WHERE category_id = ? AND user_id = ?"""
-            current_datetime = datetime.now()
-            status = 0
-            db_manager.cursor.execute(query, (current_datetime, status, category_id, user_id))
-            db_manager.conn.commit()
-            print("Category destroyed successfully!")
-            return True
-        except pyodbc.Error as e:
-            print(f"Lỗi khi thực hiện truy vấn: {e}")
-            return False
-    
     def get_task_by_id(self, db_manager, task_id):
         query = "SELECT * FROM tasks WHERE task_id = ? AND deleted_at IS NULL AND status = 1"
         result = db_manager.cursor.execute(query, (task_id,))
         task = result.fetchone() 
-        print(task)
         return task
     
-    def update_task(self, db_manager, task_id, title=None, category_id=None, description=None, due_date=None):
+    def update_task(self, db_manager, task_id, title=None, category_id=None, description=None, start_date=None, repeat_value=None):
         user = Auth.get_current_user()
         if user is None:
             print("No user is currently logged in.")
@@ -182,6 +207,16 @@ class AppLogic:
             db_manager.use_database()
 
             current_datetime = datetime.now()
+
+            # Kiểm tra quyền truy cập của người dùng
+            user_id = user[0]  # Giả sử trường đầu tiên là user_id
+            query_check_access = "SELECT * FROM tasks WHERE task_id = ? AND user_id = ?"
+            db_manager.cursor.execute(query_check_access, (task_id, user_id))
+            task = db_manager.cursor.fetchone()
+
+            if task is None:
+                print("You don't have access to update this task.")
+                return False
 
             # Tạo câu lệnh SQL UPDATE dựa trên các tham số được cung cấp
             update_fields = []
@@ -199,14 +234,31 @@ class AppLogic:
                 update_fields.append("description = ?")
                 update_values.append(description)
 
-            if due_date is not None:
-                try:
-                    due_date_str = due_date.strftime('%Y-%m-%d') 
-                    update_fields.append("due_date = ?")
-                    update_values.append(due_date_str)
-                except AttributeError:
-                    print("Invalid due date format")
+            if repeat_value is not None:
+                # Nếu repeat_value được cung cấp, tính toán lại start_date và due_date
+                if start_date is not None:
+                    start_date = datetime.strptime(start_date, '%d/%m/%Y')
+                else:
+                    start_date = current_datetime
 
+                if repeat_value == 'daily':
+                    due_date = start_date + timedelta(days=1)
+                elif repeat_value == 'weekly':
+                    due_date = start_date + timedelta(weeks=1)
+                elif repeat_value == 'monthly':
+                    due_date = self.calculate_monthly_repeat_date(start_date, 1)
+                else:
+                    due_date = current_datetime
+
+                update_fields.append("start_date = ?")
+                update_values.append(start_date)
+
+                update_fields.append("due_date = ?")
+                update_values.append(due_date)
+
+                if repeat_value is not None:
+                    update_fields.append("repeat = ?")
+                    update_values.append(repeat_value)
 
             # Nếu không có trường nào được cập nhật, thông báo và kết thúc
             if not update_fields:
@@ -216,6 +268,7 @@ class AppLogic:
             # Thêm trường updated_at vào danh sách cập nhật
             update_fields.append("updated_at = ?")
             update_values.append(current_datetime)
+            
 
             # Thêm task_id vào danh sách giá trị cho điều kiện WHERE
             update_values.append(task_id)
@@ -228,9 +281,11 @@ class AppLogic:
             db_manager.conn.commit()
             print("Task updated successfully!")
             return True
+
         except pyodbc.Error as e:
             print(f"Lỗi khi thực hiện truy vấn: {e}")
             return False
+
     
     def completed_task(self, db_manager, task_id):
         user = Auth.get_current_user()

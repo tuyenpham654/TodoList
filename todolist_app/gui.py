@@ -18,6 +18,7 @@ class App:
         self.root = tk.Tk()
         self.root.title("TodoList")
         self.root.state("zoomed")
+        self.current_month = datetime.date.today().month
 
         self.app_logic_instance = AppLogic()
 
@@ -36,21 +37,21 @@ class App:
         else:
             # Hiển thị thông báo khi xảy ra lỗi trong quá trình đánh dấu hoàn thành nhiệm vụ
             messagebox.showerror("Lỗi", "Đã xảy ra lỗi khi đánh dấu hoàn thành nhiệm vụ.")
-        self.refresh_tasks()
+        self.refresh_tasks(self.current_month)
 
     def update_task(self, parent, id):
         if self.gui_task is None:
             self.gui_task = GUITask(self.db_manager,self.on_gui_close, self.refresh_tasks)
             self.gui_task.set_task_id(id)
             self.gui_task.run()
-            self.refresh_tasks()
+            self.refresh_tasks(self.current_month)
     
     def update_category(self, id):
         if self.gui_category is None:
             self.gui_category = GUICategory(self.db_manager,self.on_gui_close,self.refresh_tasks)
             self.gui_category.set_category_id(id)
             self.gui_category.run()
-            self.refresh_tasks()
+            self.refresh_categories()
 
     def delete_task(self, parent, id):
         confirm = messagebox.askokcancel("Xác nhận", "Bạn có chắc chắn muốn xoá nhiệm vụ này?")
@@ -61,7 +62,7 @@ class App:
             else:
                 # Hiển thị thông báo khi xảy ra lỗi trong quá trình xóa nhiệm vụ
                 messagebox.showerror("Lỗi", "Đã xảy ra lỗi khi xóa nhiệm vụ.")
-        self.refresh_tasks()
+        self.refresh_tasks(self.current_month)
 
     def delete_category(self, parent, id):
         confirm = messagebox.askokcancel("Xác nhận", "Bạn có chắc chắn muốn xoá nhiệm vụ này?")
@@ -72,7 +73,7 @@ class App:
             else:
                 # Hiển thị thông báo khi xảy ra lỗi trong quá trình xóa nhiệm vụ
                 messagebox.showerror("Lỗi", "Đã xảy ra lỗi khi xóa nhiệm vụ.")
-        self.refresh_tasks()
+        self.refresh_categories()
 
     def choose_color(self,id):
         # Hiển thị hộp chọn màu
@@ -80,7 +81,7 @@ class App:
         # In ra màu được chọn
         # print(f"đã được chọn: {color}")
         self.update_category_color(color,id)
-        self.refresh_tasks()
+        self.refresh_categories()
 
     def update_category_color(self,color,id):
         self.app_logic_instance.update_category_color(self.db_manager,id,color)
@@ -107,14 +108,14 @@ class App:
         task_menu = tk.Menu(task_button, tearoff=False)
         task_button.configure(menu=task_menu)
         task_menu.add_command(label="Thêm nhiệm vụ", compound=tk.LEFT, command=self.show_task_gui)
-        task_menu.add_command(label="Làm mới nhiệm vụ", compound=tk.LEFT, command=self.refresh_tasks)
+        task_menu.add_command(label="Làm mới nhiệm vụ", compound=tk.LEFT, command= lambda month =self.current_month:self.refresh_tasks(month))
 
         category_button = tk.Menubutton(header_frame, text="Danh mục", relief="raised")
         category_button.pack(side=tk.RIGHT, padx=10, pady=5)
         category_menu = tk.Menu(category_button, tearoff=False)
         category_button.configure(menu=category_menu)
         category_menu.add_command(label="Thêm danh mục", compound=tk.LEFT, command=self.show_category_gui)
-        category_menu.add_command(label="Làm mới danh mục", compound=tk.LEFT, command=self.refresh_tasks)
+        category_menu.add_command(label="Làm mới danh mục", compound=tk.LEFT, command=self.refresh_categories)
 
 
         self.sidebar_frame = tk.Frame(self.root, width=200, bg="white")
@@ -127,26 +128,26 @@ class App:
         # Widgets trong phần Sidebar
         category_label = tk.Label(self.sidebar_frame, text="Category", font=("Arial", 14), bg="white")
         category_label.grid(padx=10, pady=10, sticky="nw")
-        user_category = self.app_logic_instance.get_user_categories(self.db_manager)
+        user_category = self.app_logic_instance.get_user_categories(self.db_manager,)
         i=1
         for cate in user_category:
             i+=1
             if cate[4] is None:
-                task_frame = tk.Frame(self.sidebar_frame, width=300, height=150, padx=5, pady=5, borderwidth=1, relief="solid")
+                cate_frame = tk.Frame(self.sidebar_frame, width=300, height=150, padx=5, pady=5, borderwidth=1, relief="solid")
             else:
-                task_frame = tk.Frame(self.sidebar_frame,background=f'{cate[4]}', width=300, height=150, padx=5, pady=5, borderwidth=1, relief="solid")
+                cate_frame = tk.Frame(self.sidebar_frame,background=f'{cate[4]}', width=300, height=150, padx=5, pady=5, borderwidth=1, relief="solid")
             # task_frame = tk.Frame(self.sidebar_frame, width=300, height=150, padx=5, pady=5, borderwidth=1, relief="solid")
-            task_frame.grid(row=i, column=0, padx=10, pady=5, sticky="nw") 
+            cate_frame.grid(row=i, column=0, padx=10, pady=5, sticky="nw") 
 
             category_name = cate[1]  # Assuming the second field is the category name
             category_description = cate[2]  # Assuming the third field is the task description
 
-            title_label = tk.Button(task_frame, text=category_name, font=("Arial", 12), width=10,command= lambda id=cate[0]:self.refresh_task_categories(id))
+            title_label = tk.Button(cate_frame, text=category_name, font=("Arial", 12), width=10,command= lambda id=cate[0]:self.refresh_task_categories(id))
             title_label.grid(row=i,column=0)
 
 
 
-            option_button = tk.Menubutton(task_frame,  text="...", relief="raised")
+            option_button = tk.Menubutton(cate_frame,  text="...", relief="raised")
             option_button.grid(row=i,column=1)
 
             option_menu = tk.Menu(option_button, tearoff=False)
@@ -167,7 +168,7 @@ class App:
         add_task_button = tk.Button(self.content_frame, text="+ Thêm nhiệm vụ", command=self.show_task_gui)
         add_task_button.place(relx=1.0, rely=0.0, anchor="ne", x=-70, y=10)
 
-        refresh_button = tk.Button(self.content_frame, text="Làm mới", command=self.refresh_tasks)
+        refresh_button = tk.Button(self.content_frame, text="Làm mới", command= lambda month =self.current_month:self.refresh_tasks(month))
         refresh_button.place(relx=1.0, rely=0.0, anchor="ne", x=-10, y=10) 
 
         self.content_frame_top = tk.Frame(self.content_frame, bg="white")
@@ -177,26 +178,52 @@ class App:
         self.content_frame_bottom.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
 
         # Widgets trong phần trên (Đang làm)
-        doing_label = tk.Label(self.content_frame_top, text="Đang làm", font=("Arial", 14), bg="white")
-        doing_label.pack(padx=10, pady=10, anchor="nw")
-        user_tasks = self.app_logic_instance.get_user_tasks(self.db_manager)
+        today = datetime.date.today()
+        current_month = today.month
+
+        # Tạo một khung chứa nhãn "Tháng" và cả hai nút "Trước" và "Sau"
+        month_frame = tk.Frame(self.content_frame_top)
+        month_frame.pack(anchor="nw", padx=10, pady=10)
+
+        # Button "Trước"
+        self.prev_month_button = tk.Button(month_frame, text="<<", command=self.show_previous_month)
+        self.prev_month_button.pack(side=tk.LEFT)  # Đặt khoảng cách từ trái
+
+        # Nhãn "Tháng"
+        self.month_label = tk.Label(month_frame, text=f"Tháng {current_month}", font=("Arial", 14), bg="white")
+        self.month_label.pack(side=tk.LEFT)  # Đặt khoảng cách từ cả hai bên
+
+        # Button "Sau"
+        self.next_month_button = tk.Button(month_frame, text=">>", command=self.show_next_month)
+        self.next_month_button.pack(side=tk.RIGHT)  # Đặt khoảng cách từ phải
+
+        user_tasks = self.app_logic_instance.get_user_tasks_by_month(self.db_manager, self.current_month)
         for task in user_tasks:
-            task_title = task[3]  # Assuming the second field is the task title
-            task_description = task[4]  # Assuming the third field is the task description
+            task_title = task[3]
+            task_description = task[4] 
+            task_start_day = task[5]
+            
+            if task[12] is not None:
+                task_color = tk.Frame(self.content_frame_top, background=f'{task[12]}',width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+                task_color.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
 
-            if task[10] is None:
-                task_frame = tk.Frame(self.content_frame_top,width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
-                
-                description_label = tk.Label(task_frame, text=task_description, font=("Arial", 12), width=10, height=5)
             else:
-                task_frame = tk.Frame(self.content_frame_top, background=f'{task[10]}',width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
-                title_label = tk.Label(task_frame, text=task_title, background=f'{task[10]}', font=("Arial", 16), width=10)
-                description_label = tk.Label(task_frame, text=task_description, background=f'{task[10]}', font=("Arial", 12), width=10, height=5)
+                task_color = tk.Frame(self.content_frame_top, background='white',width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+                task_color.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
 
+            
 
-            task_frame.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
-            title_label.pack()
-            description_label.pack()
+            task_frame = tk.Frame(task_color,width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+            task_frame.pack(padx=3,pady=3)    
+            title_label = tk.Label(task_frame, text=task_title, font=("Arial", 16), width=10)
+            title_label.pack(expand=True, fill="both")
+
+            task_start_day_label = tk.Label(task_frame, text=f"Ngày: {task_start_day}", font=("Arial", 12), width=10, pady=10)
+            task_start_day_label.pack(expand=True, fill="both")
+
+            if task_description is not None:
+                description_label = tk.Label(task_frame, text=f"Mô tả: {task_description}", font=("Arial", 10), width=10, height=2, pady=10)
+                description_label.pack(expand=True, fill="both")
 
             # Tạo một Frame để chứa các button và sử dụng grid để căn giữa và đồng bộ width
             button_frame = tk.Frame(task_frame)
@@ -212,28 +239,34 @@ class App:
             delete_button.grid(row=2, column=0, padx=5, pady=5)
 
         # Widgets trong phần dưới (Hoàn thành)
-        completed_label = tk.Label(self.content_frame_bottom, text="Khác", font=("Arial", 14), bg="white")
-        completed_label.pack(padx=10, pady=10, anchor="nw")
-        user_tasks = self.app_logic_instance.get_user_tasks_other(self.db_manager)
+        other_task_label = tk.Label(self.content_frame_bottom, text="Khác", font=("Arial", 14), bg="white")
+        other_task_label.pack(padx=10, pady=10, anchor="nw")
+        user_tasks = self.app_logic_instance.get_user_tasks_other(self.db_manager, current_month)
         for task in user_tasks:
             task_title = task[3] 
             task_description = task[4]
-            task_status = task[9]
-                
-            if task[10] is None:
-                task_frame = tk.Frame(self.content_frame_bottom, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+            task_status = task[11]
+            
+            if task[12] is None:
+                task_color = tk.Frame(self.content_frame_bottom,width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+                task_color.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
+
+                task_frame = tk.Frame(task_color, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
                 title_label = tk.Label(task_frame, text=task_title, font=("Arial", 16), width=10)
                 description_label = tk.Label(task_frame, text=task_description, font=("Arial", 12), width=10, height=5)
 
             else:
-                task_frame = tk.Frame(self.content_frame_bottom, background=f'{task[10]}', width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
-                title_label = tk.Label(task_frame,background=f'{task[10]}', text=task_title, font=("Arial", 16), width=10)
-                description_label = tk.Label(task_frame, background=f'{task[10]}', text=task_description, font=("Arial", 12), width=10, height=5)
+                task_color = tk.Frame(self.content_frame_bottom, background=f'{task[12]}',width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+                task_color.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
+
+                task_frame = tk.Frame(task_color, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+                title_label = tk.Label(task_frame, text=task_title, font=("Arial", 16), width=10)
+                description_label = tk.Label(task_frame, text=task_description, font=("Arial", 12), width=10, height=5)
 
 
-            task_frame.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")          
+            task_frame.pack(padx=3, pady=3)          
             title_label.pack()
-            description_label.pack()
+            description_label.pack(expand=True, fill="both")
 
             status_text = ""
             status_color = ""
@@ -247,7 +280,7 @@ class App:
             status_label = tk.Label(task_frame, text=status_text, font=("Arial", 12), foreground=status_color)
             status_label.pack()
     
-    def refresh_tasks(self):
+    def refresh_tasks(self, current_month):
     # Xóa nhiệm vụ hiện có trên giao diện
         for widget in self.content_frame_top.winfo_children():
             widget.destroy()
@@ -255,12 +288,19 @@ class App:
         for widget in self.content_frame_bottom.winfo_children():
             widget.destroy()
 
-        for widget in self.sidebar_frame.winfo_children():
+        self.show_current_tasks(current_month)
+        self.show_other_tasks(current_month)
+    
+    def refresh_categories(self, current_month):
+    # Xóa nhiệm vụ hiện có trên giao diện
+        for widget in self.content_frame_top.winfo_children():
             widget.destroy()
 
-        self.show_current_tasks()
-        self.show_other_tasks()
+        for widget in self.content_frame_bottom.winfo_children():
+            widget.destroy()
+
         self.show_categories()
+
     
     def refresh_task_categories(self,cate_id):
     # Xóa nhiệm vụ hiện có trên giao diện
@@ -272,27 +312,54 @@ class App:
 
         self.show_curent_tasks_by_category(cate_id)
         
-    def show_current_tasks(self):
-        doing_label = tk.Label(self.content_frame_top, text="Đang làm", font=("Arial", 14), bg="white")
-        doing_label.pack(padx=10, pady=10, anchor="nw")
-        user_tasks = self.app_logic_instance.get_user_tasks(self.db_manager)
+    def show_current_tasks(self, current_month):
+        today = datetime.date.today()
+        current_month = today.month
+
+        # Tạo một khung chứa nhãn "Tháng" và cả hai nút "Trước" và "Sau"
+        month_frame = tk.Frame(self.content_frame_top)
+        month_frame.pack(anchor="nw", padx=10, pady=10)
+
+        # Button "Trước"
+        self.prev_month_button = tk.Button(month_frame, text="<<", command=self.show_previous_month)
+        self.prev_month_button.pack(side=tk.LEFT)  # Đặt khoảng cách từ trái
+
+        # Nhãn "Tháng"
+        self.month_label = tk.Label(month_frame, text=f"Tháng {self.current_month}", font=("Arial", 14), bg="white")
+        print('show current'+str(current_month))
+        self.month_label.pack(side=tk.LEFT)  # Đặt khoảng cách từ cả hai bên
+
+        # Button "Sau"
+        self.next_month_button = tk.Button(month_frame, text=">>", command=self.show_next_month)
+        self.next_month_button.pack(side=tk.RIGHT)  # Đặt khoảng cách từ phải
+
+        user_tasks = self.app_logic_instance.get_user_tasks_by_month(self.db_manager, self.current_month)
         for task in user_tasks:
-            task_title = task[3]  # Assuming the second field is the task title
-            task_description = task[4]  # Assuming the third field is the task description
+            task_title = task[3]
+            task_description = task[4] 
+            task_start_day = task[5]
+            
+            if task[12] is not None:
+                task_color = tk.Frame(self.content_frame_top, background=f'{task[12]}',width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+                task_color.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
 
-            if task[10] is None:
-                task_frame = tk.Frame(self.content_frame_top,width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
-                
-                description_label = tk.Label(task_frame, text=task_description, font=("Arial", 12), width=10, height=5)
             else:
-                task_frame = tk.Frame(self.content_frame_top, background=f'{task[10]}',width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
-                title_label = tk.Label(task_frame, text=task_title, background=f'{task[10]}', font=("Arial", 16), width=10)
-                description_label = tk.Label(task_frame, text=task_description, background=f'{task[10]}', font=("Arial", 12), width=10, height=5)
+                task_color = tk.Frame(self.content_frame_top, background='white',width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+                task_color.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
 
+            
 
-            task_frame.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
-            title_label.pack()
-            description_label.pack()
+            task_frame = tk.Frame(task_color,width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+            task_frame.pack(padx=3,pady=3)    
+            title_label = tk.Label(task_frame, text=task_title, font=("Arial", 16), width=10)
+            title_label.pack(expand=True, fill="both")
+
+            task_start_day_label = tk.Label(task_frame, text=f"Ngày: {task_start_day}", font=("Arial", 12), width=10, pady=10)
+            task_start_day_label.pack(expand=True, fill="both")
+
+            if task_description is not None:
+                description_label = tk.Label(task_frame, text=f"Mô tả: {task_description}", font=("Arial", 10), width=10, height=2, pady=10)
+                description_label.pack(expand=True, fill="both")
 
             # Tạo một Frame để chứa các button và sử dụng grid để căn giữa và đồng bộ width
             button_frame = tk.Frame(task_frame)
@@ -307,29 +374,35 @@ class App:
             delete_button = tk.Button(button_frame, text="Xoá", command=lambda id=task[0]: self.delete_task(task_frame, id), foreground="red", width=10)
             delete_button.grid(row=2, column=0, padx=5, pady=5)
 
-    def show_other_tasks(self):
+    def show_other_tasks(self, current_month):
         completed_label = tk.Label(self.content_frame_bottom, text="Khác", font=("Arial", 14), bg="white")
         completed_label.pack(padx=10, pady=10, anchor="nw")
-        user_tasks = self.app_logic_instance.get_user_tasks_other(self.db_manager)
+        user_tasks = self.app_logic_instance.get_user_tasks_other(self.db_manager, current_month)
         for task in user_tasks:
             task_title = task[3] 
             task_description = task[4]
-            task_status = task[9]
+            task_status = task[11]
                 
-            if task[10] is None:
-                task_frame = tk.Frame(self.content_frame_bottom, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+            if task[12] is None:
+                task_color = tk.Frame(self.content_frame_bottom,width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+                task_color.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
+
+                task_frame = tk.Frame(task_color, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
                 title_label = tk.Label(task_frame, text=task_title, font=("Arial", 16), width=10)
                 description_label = tk.Label(task_frame, text=task_description, font=("Arial", 12), width=10, height=5)
 
             else:
-                task_frame = tk.Frame(self.content_frame_bottom, background=f'{task[10]}', width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
-                title_label = tk.Label(task_frame,background=f'{task[10]}', text=task_title, font=("Arial", 16), width=10)
-                description_label = tk.Label(task_frame, background=f'{task[10]}', text=task_description, font=("Arial", 12), width=10, height=5)
+                task_color = tk.Frame(self.content_frame_bottom, background=f'{task[12]}',width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+                task_color.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
+
+                task_frame = tk.Frame(task_color, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+                title_label = tk.Label(task_frame, text=task_title, font=("Arial", 16), width=10)
+                description_label = tk.Label(task_frame, text=task_description, font=("Arial", 12), width=10, height=5)
 
 
-            task_frame.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")          
+            task_frame.pack(padx=3, pady=3)          
             title_label.pack()
-            description_label.pack()
+            description_label.pack(expand=True, fill="both")
 
             status_text = ""
             status_color = ""
@@ -383,19 +456,25 @@ class App:
             task_title = task[3]  # Assuming the second field is the task title
             task_description = task[4]  # Assuming the third field is the task description
 
-            if task[10] is None:
-                task_frame = tk.Frame(self.content_frame_top,width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
-                
+            if task[12] is None:
+                task_color = tk.Frame(self.content_frame_top, background=f'white',width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+                task_color.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
+
+                task_frame = tk.Frame(task_color,width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+                title_label = tk.Label(task_frame, text=task_title, font=("Arial", 16), width=10)
                 description_label = tk.Label(task_frame, text=task_description, font=("Arial", 12), width=10, height=5)
+
             else:
-                task_frame = tk.Frame(self.content_frame_top, background=f'{task[10]}',width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
-                title_label = tk.Label(task_frame, text=task_title, background=f'{task[10]}', font=("Arial", 16), width=10)
-                description_label = tk.Label(task_frame, text=task_description, background=f'{task[10]}', font=("Arial", 12), width=10, height=5)
+                task_color = tk.Frame(self.content_frame_top, background=f'{task[12]}',width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+                task_color.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
 
+                task_frame = tk.Frame(task_color,width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+                title_label = tk.Label(task_frame, text=task_title, font=("Arial", 16), width=10)
+                description_label = tk.Label(task_frame, text=task_description, font=("Arial", 12), width=10, height=5)
 
-            task_frame.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
-            title_label.pack()
-            description_label.pack()
+            task_frame.pack( padx=3, pady=3)
+            title_label.pack(expand=True,fill="both")
+            description_label.pack(expand=True, fill="both")
 
             # Tạo một Frame để chứa các button và sử dụng grid để căn giữa và đồng bộ width
             button_frame = tk.Frame(task_frame)
@@ -410,6 +489,7 @@ class App:
             delete_button = tk.Button(button_frame, text="Xoá", command=lambda id=task[0]: self.delete_task(task_frame, id), foreground="red", width=10)
             delete_button.grid(row=2, column=0, padx=5, pady=5)
 
+
     def show_other_tasks_by_category(self,category_id):
         completed_label = tk.Label(self.content_frame_bottom, text="Khác", font=("Arial", 14), bg="white")
         completed_label.pack(padx=10, pady=10, anchor="nw")
@@ -417,22 +497,28 @@ class App:
         for task in user_tasks:
             task_title = task[3] 
             task_description = task[4]
-            task_status = task[9]
+            task_status = task[11]
                 
-            if task[10] is None:
-                task_frame = tk.Frame(self.content_frame_bottom, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+            if task[12] is None:
+                task_color = tk.Frame(self.content_frame_bottom,width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+                task_color.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
+
+                task_frame = tk.Frame(task_color, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
                 title_label = tk.Label(task_frame, text=task_title, font=("Arial", 16), width=10)
                 description_label = tk.Label(task_frame, text=task_description, font=("Arial", 12), width=10, height=5)
 
             else:
-                task_frame = tk.Frame(self.content_frame_bottom, background=f'{task[10]}', width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
-                title_label = tk.Label(task_frame,background=f'{task[10]}', text=task_title, font=("Arial", 16), width=10)
-                description_label = tk.Label(task_frame, background=f'{task[10]}', text=task_description, font=("Arial", 12), width=10, height=5)
+                task_color = tk.Frame(self.content_frame_bottom, background=f'{task[12]}',width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+                task_color.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")
+
+                task_frame = tk.Frame(task_color, width=300, height=150, padx=10, pady=10, borderwidth=1, relief="solid")
+                title_label = tk.Label(task_frame, text=task_title, font=("Arial", 16), width=10)
+                description_label = tk.Label(task_frame, text=task_description, font=("Arial", 12), width=10, height=5)
 
 
-            task_frame.pack(side=tk.LEFT, padx=10, pady=10, anchor="nw")          
+            task_frame.pack(padx=3, pady=3)          
             title_label.pack()
-            description_label.pack()
+            description_label.pack(expand=True, fill="both")
 
             status_text = ""
             status_color = ""
@@ -494,6 +580,24 @@ class App:
         user_name = self.app_logic_instance.get_user_name()
         if self.header_label is not None:
             self.header_label.config(text=f"Hi: {user_name}")
+
+    def show_previous_month(self):
+        if hasattr(self, 'current_month'):
+            self.current_month -= 1
+            if self.current_month == 0:
+                self.current_month = 12
+            if self.month_label.winfo_exists():
+                self.month_label.config(text=f"Tháng {self.current_month}")
+            self.refresh_tasks(self.current_month)
+
+    def show_next_month(self):
+        if hasattr(self, 'current_month'):
+            self.current_month += 1
+            if self.current_month == 13:
+                self.current_month = 1
+            if self.month_label.winfo_exists():
+                self.month_label.config(text=f"Tháng {self.current_month}")
+            self.refresh_tasks(self.current_month)
 
 
 if __name__ == "__main__":
